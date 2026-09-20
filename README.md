@@ -37,7 +37,7 @@ yarn test:e2e  # production-browser checks (build first)
 
 ## Deploy
 
-The app deploys to Cloudflare as a single Worker: `dist/` as static assets, plus the media bridge with an edge cache. It fits the Workers Free plan; only media requests count against it. Follow [docs/cloudflare-deployment.md](docs/cloudflare-deployment.md): `yarn deploy` creates and uploads the Worker, `tofu -chdir=infra apply` attaches your hostname, and CI can deploy on every push to `main`.
+The app deploys to Cloudflare as a single Worker: `dist/` as static assets, plus the media bridge with an edge cache. It fits the Workers Free plan; only media requests count against it. Follow [docs/cloudflare-deployment.md](docs/cloudflare-deployment.md): `yarn deploy` creates and uploads the Worker, `yarn infra:apply` attaches your hostname (`yarn deploy:all` does both and verifies the result), and CI can deploy on every push to `main`.
 
 The app currently expects the **root of an origin**, not a subdirectory. There are no API keys or external databases to configure. User libraries remain in the browser; the Worker is stateless.
 

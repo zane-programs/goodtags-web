@@ -8,14 +8,20 @@
     "start": "node scripts/serve.mjs",
     "build": "node scripts/prepare-web-assets.mjs && yarn typecheck && vite build",
     "deploy": "yarn build && wrangler deploy",
+    "deploy:all": "yarn deploy && yarn infra:apply && yarn deploy:check",
+    "deploy:check": "node scripts/infra.mjs check",
+    "infra:plan": "node scripts/infra.mjs plan",
+    "infra:apply": "node scripts/infra.mjs apply",
+    "infra:destroy": "node scripts/infra.mjs destroy",
+    "logs": "wrangler tail",
     "preview": "vite preview --host 0.0.0.0",
     "test": "vitest run",
     "test:watch": "vitest",
     "typecheck": "tsc --noEmit && tsc -p worker/tsconfig.json",
-    "lint": "eslint web worker scripts/serve.mjs vite.config.ts",
+    "lint": "eslint web worker scripts/serve.mjs scripts/infra.mjs vite.config.ts",
     "db:refresh": "./scripts/refresh-bundled-db.sh",
     "test:e2e": "playwright test",
-    "format": "prettier --write web worker scripts/serve.mjs e2e/web vite.config.ts playwright.config.ts"
+    "format": "prettier --write web worker scripts/serve.mjs scripts/infra.mjs e2e/web vite.config.ts playwright.config.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

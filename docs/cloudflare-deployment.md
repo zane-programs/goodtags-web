@@ -72,13 +72,20 @@ You need a Cloudflare account, a zone already active in it (for example
 
 1. **Create an API token.** Dashboard → My Profile → API Tokens → Create Token →
    *Edit Cloudflare Workers* template. Under *Account Resources* pick your account and
-   under *Zone Resources* pick the one zone. Export it together with the account ID
-   (`yarn wrangler whoami`, or the Workers & Pages overview):
+   under *Zone Resources* pick the one zone. Put it in a root `.env` (gitignored)
+   together with the account ID (`yarn wrangler whoami`, or the Workers & Pages
+   overview). Wrangler and the `infra:*` scripts both read it; exported variables work
+   too and take precedence:
 
    ```sh
-   export CLOUDFLARE_API_TOKEN=…
-   export CLOUDFLARE_ACCOUNT_ID=…
+   CLOUDFLARE_API_TOKEN=…
+   CLOUDFLARE_ACCOUNT_ID=…
    ```
+
+   Then `cp infra/terraform.tfvars.example infra/terraform.tfvars` (gitignored) and
+   set `zone_name` and `hostname`. `account_id` is taken from `CLOUDFLARE_ACCOUNT_ID`.
+
+   With that in place, `yarn deploy:all` runs steps 2–4 in order. They are:
 
 2. **Upload the app.** The first deploy creates the Worker.
 
@@ -94,19 +101,20 @@ You need a Cloudflare account, a zone already active in it (for example
    custom domain to a Worker that has no deployment (error 100124).
 
    ```sh
-   cp infra/terraform.tfvars.example infra/terraform.tfvars   # gitignored; fill it in
-   tofu -chdir=infra init
-   tofu -chdir=infra apply
+   yarn infra:plan        # optional preview
+   yarn infra:apply
    ```
+
+   `scripts/infra.mjs` loads `.env`, uses `tofu` or `terraform`, whichever is
+   installed, and runs `init` the first time. Extra arguments pass through
+   (`yarn infra:apply -auto-approve`).
 
    This creates a proxied DNS record for the hostname and its certificate. The
    hostname must not already have a DNS record.
 
-4. **Check it.** A score or track requested twice should go `MISS` then `HIT`:
-
-   ```sh
-   curl -sI "https://goodtags.example.com/media?url=https%3A%2F%2Fwww.barbershoptags.com%2Ftags%2FSmile.gif" | grep -i x-goodtags-cache
-   ```
+4. **Check it.** `yarn deploy:check` requests the site and then a score twice,
+   expecting the second to be served from the edge (`X-Goodtags-Cache: HIT`). A new
+   certificate can take a few minutes.
 
    Then open the site, play a learning track in Safari (range requests), install it,
    and reload it offline.
@@ -139,14 +147,14 @@ rare and are applied by hand from a machine that has the state.
 
 ## Operating it
 
-- **Logs:** `yarn wrangler tail`, or Workers & Pages → goodtags-web → Logs.
+- **Logs:** `yarn logs`, or Workers & Pages → goodtags-web → Logs.
   Bridge failures are logged as `media bridge failed <url> <error>`.
 - **Usage:** the same page shows requests against the daily quota. Only `/media`
   counts.
 - **Roll back:** `yarn wrangler rollback`, or Deployments in the dashboard.
 - **Purge a bad cached file:** Caching → Configuration → Custom Purge by URL with the
   exact `/media?url=…` URL the app requested, or wait out the TTL.
-- **Tear down:** `tofu -chdir=infra destroy`, then `yarn wrangler delete`, then delete
+- **Tear down:** `yarn infra:destroy`, then `yarn wrangler delete`, then delete
   the leftover certificate if the dashboard still lists one.
 
 ## Local equivalents

@@ -1,5 +1,8 @@
 # Copy to terraform.tfvars (gitignored) and fill in. No secrets belong here: the API
 # token is read from the CLOUDFLARE_API_TOKEN environment variable.
-account_id = "0123456789abcdef0123456789abcdef"
-zone_name  = "example.com"
-hostname   = "goodtags.example.com"
+zone_name = "example.com"
+hostname  = "goodtags.example.com"
+
+# Only needed when running tofu directly: the yarn infra:* scripts pass
+# CLOUDFLARE_ACCOUNT_ID through as this variable.
+# account_id = "0123456789abcdef0123456789abcdef"
