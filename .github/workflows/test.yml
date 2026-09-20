@@ -13,8 +13,8 @@ jobs:
   test-web:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - uses: opentofu/setup-opentofu@v1
@@ -39,7 +39,7 @@ jobs:
         run: yarn playwright install --with-deps chromium webkit
       - name: browser tests
         run: yarn test:e2e
-      - uses: actions/upload-artifact@v4
+      - uses: actions/upload-artifact@v5
         if: failure()
         with:
           name: browser-test-results
@@ -58,8 +58,8 @@ jobs:
       group: deploy-web
       cancel-in-progress: false
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-node@v4
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
         with:
           node-version: '22'
       - name: enable repository package manager
@@ -76,10 +76,10 @@ jobs:
     runs-on: 'ubuntu-latest'
     steps:
       - name: 'checkout repo'
-        uses: 'actions/checkout@v4'
+        uses: 'actions/checkout@v5'
       - name: 'set up python'
         # This is the version of the action for setting up Python, not the Python version.
-        uses: 'actions/setup-python@v4'
+        uses: 'actions/setup-python@v6'
         with:
           python-version: '3.11'
           cache: 'pip'
