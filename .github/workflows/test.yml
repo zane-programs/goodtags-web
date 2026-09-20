@@ -5,6 +5,8 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  # "Run workflow" in the Actions tab: re-test and redeploy main without a new commit.
+  workflow_dispatch:
 
 jobs:
 
@@ -50,7 +52,7 @@ jobs:
   # (see docs/cloudflare-deployment.md).
   deploy-web:
     needs: test-web
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.CLOUDFLARE_DEPLOY == 'true'
+    if: github.event_name != 'pull_request' && github.ref == 'refs/heads/main' && vars.CLOUDFLARE_DEPLOY == 'true'
     runs-on: ubuntu-latest
     concurrency:
       group: deploy-web

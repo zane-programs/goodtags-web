@@ -142,6 +142,9 @@ re-applying.
   `CLOUDFLARE_ACCOUNT_ID`.
 - Same page → **Variables**: `CLOUDFLARE_DEPLOY` = `true`.
 
+On a fork, GitHub does not run workflows until they are enabled once in the Actions
+tab. *Run workflow* there re-tests and redeploys `main` without a new commit.
+
 CI never runs `tofu apply`; it only validates `infra/`. Infrastructure changes are
 rare and are applied by hand from a machine that has the state.
 
