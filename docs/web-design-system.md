@@ -70,7 +70,10 @@ Logo), `action-menu` (FABDown), `list-screen` + `tag-list` (ListHeader, TagList,
 Modeled on the native react-navigation tree rather than on route swapping:
 
 - `routes.ts` maps URLs to a serializable navigator state: a root stack above four tabs, the
-  home tab holding its own stack. A deep link rebuilds the screens beneath it.
+  home tab holding its own stack. A deep link rebuilds the screens beneath it. Only the
+  pathname selects a screen: unknown queries (`?fbclid=…`), fragments and trailing slashes
+  are ignored, and a query survives only as params for screens that read one
+  (`/labels/new?tag=5`).
 - `navigator.tsx` stores that state in `history.state`, so browser back/forward restore the
   exact stack. `StackView` keeps every screen mounted (`inert` and hidden when covered, as
   `freezeOnBlur` does), and applies the native transition: `animation: 'fade'`, 0.5s

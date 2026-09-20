@@ -223,6 +223,16 @@ test('a deep link rebuilds the stack beneath it', async ({ page }) => {
   await expect(homeRow(page, 'popular')).toBeVisible()
 })
 
+test('links decorated with tracking queries open the page they point at', async ({ page }) => {
+  await enter(page, '/?fbclid=IwAR0abc')
+  await expect(homeRow(page, 'popular')).toBeVisible()
+  await expect(page.getByText('page not found')).toHaveCount(0)
+  await enter(page, '/popular/tag/1809/?utm_source=share&fbclid=x')
+  await expect(button(page, 'menu')).toBeVisible()
+  await button(page, 'back').click()
+  await expect(rows(page)).toHaveCount(50)
+})
+
 test('nothing scrolls the page sideways at any supported width', async ({ page }) => {
   await enter(page, '/popular')
   await expect(rows(page).first()).toBeVisible()

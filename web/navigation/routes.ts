@@ -95,6 +95,17 @@ function match(
 
 const tagPattern = /^(.*)\/tag\/(\d+)(?:\/(labels|videos))?$/
 
+/**
+ * Links arrive decorated by whoever shared them ('/?fbclid=…', '/tag/5?utm_source=…',
+ * '/popular/'). Only the pathname selects a screen; the query is kept solely as params
+ * for the screens that read them, so an unknown one can never make a page "not found".
+ */
+function parts(path: string) {
+  const [raw, query = ''] = path.split('#')[0].split('?')
+  const pathname = raw.replace(/\/+$/, '') || '/'
+  return { pathname, withQuery: query ? `${pathname}?${query}` : pathname }
+}
+
 /** Where a tag's list lives: '/popular/tag/5' belongs to the list at '/popular'. */
 export function listPathOf(path: string) {
   return path.match(tagPattern)?.[1] ?? ''
@@ -108,13 +119,14 @@ export const emptyNav = (): NavState => ({ tab: 'home', home: [], root: [] })
  */
 export function stateFromPath(path: string): NavState {
   const state = emptyNav()
-  const tagged = path.match(tagPattern)
-  const base = tagged ? tagged[1] || '/' : path
+  const { pathname, withQuery } = parts(path)
+  const tagged = pathname.match(tagPattern)
+  const base = tagged ? tagged[1] || '/' : pathname
   const tab = (Object.keys(tabPaths) as TabName[]).find(name => tabPaths[name] === base)
   if (tab) state.tab = tab
   else {
-    const home = match(homeScreens, base, true)
-    const root = match(rootScreens, base, true)
+    const home = match(homeScreens, tagged ? base : withQuery, true)
+    const root = match(rootScreens, tagged ? base : withQuery, true)
     if (home) {
       if (home.name === 'labeled' || home.name === 'labelEditor')
         state.home.push(route('labels', '/labels', {}, true))
@@ -139,17 +151,18 @@ export function stateFromPath(path: string): NavState {
 
 /** Applies a push of `path` to `state`, as navigation.navigate() would natively. */
 export function pushPath(state: NavState, path: string): NavState {
-  const tab = (Object.keys(tabPaths) as TabName[]).find(name => tabPaths[name] === path)
+  const { pathname, withQuery } = parts(path)
+  const tab = (Object.keys(tabPaths) as TabName[]).find(name => tabPaths[name] === pathname)
   if (tab) return { ...state, tab, root: [], home: tab === 'home' ? [] : state.home }
-  const home = match(homeScreens, path, false)
+  const home = match(homeScreens, withQuery, false)
   if (home) return { tab: 'home', home: [...state.home, home], root: [] }
-  const root = match(rootScreens, path, false)
+  const root = match(rootScreens, withQuery, false)
   if (root) return { ...state, root: [...state.root, root] }
-  const tagged = path.match(tagPattern)
+  const tagged = pathname.match(tagPattern)
   if (tagged) {
     const [, prefix, id, sub] = tagged
     const name = sub === 'labels' ? 'tagLabels' : sub === 'videos' ? 'tagVideos' : 'tag'
-    return { ...state, root: [...state.root, route(name, path, { id, list: prefix }, false)] }
+    return { ...state, root: [...state.root, route(name, pathname, { id, list: prefix }, false)] }
   }
   return { ...state, root: [...state.root, route('notFound', path, {}, false)] }
 }
