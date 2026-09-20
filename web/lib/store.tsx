@@ -7,7 +7,7 @@ import {
   useRef,
   type ReactNode,
 } from 'react'
-import { toast } from 'sonner'
+import { snackbar } from '@/components/ui/snackbar'
 import { emptyLibrary, type Library } from './types'
 import { readLibrary } from './library'
 const KEY = 'goodtags.library.v1'
@@ -36,7 +36,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
   const update = useCallback(
     (change: (value: Library) => Library, allowRecovery = false) => {
       if (blocked.current && !allowRecovery) {
-        toast.error(initial.error)
+        snackbar(initial.error)
         return false
       }
       try {
@@ -54,7 +54,7 @@ export function LibraryProvider({ children }: { children: ReactNode }) {
       } catch (error) {
         const message = error instanceof Error ? error.message : 'Could not save changes'
         setStorageError(message)
-        toast.error(message)
+        snackbar(message)
         return false
       }
     },

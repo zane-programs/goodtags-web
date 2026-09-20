@@ -1,4 +1,6 @@
-import { NativeIcon } from './NativeIcon'
+import { mdiMusicAccidentalFlat, mdiMusicAccidentalSharp } from '@mdi/js'
+import { Icon } from './ui/icon'
+
 // Font Awesome Free 6 letter glyphs, matching native NoteButton. CC BY 4.0.
 // https://github.com/FortAwesome/Font-Awesome; see public/licenses/font-awesome.txt.
 const letters = {
@@ -31,11 +33,23 @@ const letters = {
     "path": "M224 96C135.6 96 64 167.6 64 256s71.6 160 160 160c77.4 0 142-55 156.8-128L256 288c-17.7 0-32-14.3-32-32s14.3-32 32-32l144 0c25.8 0 49.6 21.4 47.2 50.6C437.8 389.6 341.4 480 224 480C100.3 480 0 379.7 0 256S100.3 32 224 32c57.4 0 109.7 21.6 149.3 57c13.2 11.8 14.3 32 2.5 45.2s-32 14.3-45.2 2.5C302.3 111.4 265 96 224 96z"
   }
 } as const
-export function PitchGlyph({ note, size = 40 }: { note: string; size?: number }) {
+/**
+ * NoteButton.tsx: the key's letter as a Font Awesome glyph at 70% of the button size, with a
+ * Material accidental overlapping its right edge.
+ */
+export function NoteGlyph({ note, size = 40 }: { note: string; size?: number }) {
   const letter = letters[note[0]?.toLowerCase() as keyof typeof letters]
   if (!letter) return null
-  return <span className="pitch-glyph" style={{ width: size, height: size }} aria-hidden="true">
-    <svg viewBox={letter.viewBox} style={{ width: size * .7, height: size * .7 }} fill="currentColor"><path d={letter.path} /></svg>
-    {note[1] === '#' || note[1] === 'b' ? <NativeIcon className="pitch-accidental" name={note[1] === '#' ? 'music-accidental-sharp' : 'music-accidental-flat'} style={{ left: size * .7 * .85, width: size * .7, height: size * .7 }} /> : null}
-  </span>
+  const glyph = size * 0.7
+  const accidental = note[1] === '#' ? mdiMusicAccidentalSharp : note[1] === 'b' ? mdiMusicAccidentalFlat : null
+  return (
+    <span aria-hidden="true" className="relative grid place-content-center" style={{ width: size, height: size }}>
+      <svg viewBox={letter.viewBox} fill="currentColor" style={{ height: glyph }}>
+        <path d={letter.path} />
+      </svg>
+      {accidental && (
+        <Icon path={accidental} size={glyph} className="absolute top-1/2 -translate-y-1/2" style={{ left: glyph * 0.85 }} />
+      )}
+    </span>
+  )
 }
