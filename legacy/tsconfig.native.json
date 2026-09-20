@@ -1,0 +1,14 @@
+{
+  "extends": "@react-native/typescript-config",
+  "include": ["**/*.ts", "**/*.tsx"],
+  "exclude": ["**/node_modules", "**/Pods"],
+  "compilerOptions": {
+    "types": ["jest", "node"],
+    "paths": {
+      "@app/*": ["./src/*"],
+      "react-native-paper/lib/module/*": [
+        "./node_modules/react-native-paper/lib/typescript/*"
+      ]
+    }
+  }
+}

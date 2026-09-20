@@ -3,6 +3,7 @@
 Design, architecture, and background docs for goodtags. Keep each in sync with the code
 it describes — when you change that area, update the doc in the same PR.
 
+- [web-migration.md](web-migration.md) — active React web architecture, native feature mapping, browser persistence, PWA lifecycle, and verification. Start here for the web fork. The documents below describe the preserved native implementation unless noted otherwise.
 - [search-database.md](search-database.md) — architecture of the offline tag-search
   SQLite database: how it's generated server-side, seeded from the bundle, updated over
   the network, adopted, and queried on-device, plus the hard-won invariants in

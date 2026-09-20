@@ -1,106 +1,11 @@
-# goodtags AI Coding Assistant Instructions
+# goodtags web
 
-goodtags is a React Native app (v0.81) for browsing and playing barbershop quartet tags. The app provides searchable access to 2800+ tags with sheet music (PDF), learning tracks (MP3), and YouTube videos.
+The active application is a React DOM port using React 19, TypeScript, Vite, shadcn/ui, and Tailwind v4. Read README.md and docs/web-migration.md before changing architecture.
 
-## Architecture Overview
-
-### State Management (Redux Toolkit)
-- **Store**: Centralized at `src/store.ts` with 11 slices combining reducers
-- **Key slices**: search, favorites, popular, classic, easy, new, history, tracks, options, visit, random
-- **Persistence**: Uses `redux-persist` with `AsyncStorage`, includes migration system in `store.ts`
-- **Pattern**: Each slice follows consistent structure - state interface, initialState, createSlice with reducers/extraReducers, selector functions, exported actions
-- **Selectors**: Named `selectX` pattern (e.g., `selectFavorites`, `selectHistory`) returning `TagListState`
-- **Thunks**: Async operations use `createAsyncThunk` with `ThunkApiConfig` type for type-safe dispatch/state/rejectValue
-
-### Data Layer
-- **SQLite database**: Contains all tag metadata, bundled with app and auto-updates from remote server
-- **Database lifecycle**: `warmupDb()` called in `index.js` at startup to initialize DB connection
-- **Dynamic updates**: `src/modules/sqlUtil.ts` stages a newer remote DB on disk and adopts it on the *next* launch; the live connection is never hot-swapped mid-session. The Data screen's "refresh" (`refreshDbNow`) is the one path that adopts immediately. See `docs/search-database.md`.
-- **Update flow**: On first DB access, copies from app bundle if needed, then checks remote server for newer version in background
-- **Remote sync**: Manifest-based versioning (`manifest.json` + schema versions), DB downloads compressed (~4x smaller with gzip)
-- **Search**: Queries run against local SQLite via `expo-sqlite`, results converted to `Tag` objects by `fetchAndConvertTags()`
-
-### Navigation Structure
-- **Root**: `RootStackNavigator` wraps tab navigator + modals (Settings, TagView)
-- **Tabs**: Bottom tab navigation with Home, Search, Favorites, Random screens
-- **Home navigator**: Nested stack for Popular, Classic, Easy, New, Labels, Options, Data
-- **Type safety**: `navigationParams.ts` defines all param lists with `CompositeScreenProps` typing
-- **Navigation flow**: User browses tag lists → taps tag → opens TagView modal with sheet music + tracks
-
-### Platform-Specific Patterns
-
-#### Native Modules
-- **Android StatusBar**: Custom `StatusBarModule.kt` for edge-to-edge compatibility, registered in `StatusBarPackage.kt` and added to `MainApplication.kt`
-- **Conditional import**: StatusBarModule only imported on Android (`Platform.OS === 'android'`), null on iOS
-- **Audio setup**: `expo-audio` configured for silent mode playback in `App.tsx`
-
-#### Build & Deploy
-- **Version bumping**: Use `yarn package:bump [patch|minor|major]` to bump package.json version (infrequent)
-- **iOS**: `yarn ios:deploy` auto-bumps iOS build number, syncs version from package.json, builds archive, uploads to TestFlight
-- **Android**: `yarn android:deploy` auto-bumps versionCode, builds AAB for Play Store
-- **Signing**: Android requires keystore setup via `yarn android:signing` (one-time)
-
-## Code Conventions
-
-### Import Aliases
-- Use `@app/*` for all src imports (configured in `tsconfig.json`, `babel.config.js`, `jest.config.js`)
-- Example: `import { useAppSelector } from '@app/hooks'`
-
-### TypeScript Patterns
-- Hooks: `useAppSelector` and `useAppDispatch` instead of raw react-redux hooks (typed wrappers in `src/hooks/useAppDispatch.ts`)
-- State types: `RootState` from store, `AppDispatch` for dispatch typing
-- Component props: Define explicit interface, destructure in function signature
-
-### Testing
-- Unit tests: Jest with `@testing-library/react-native`, run `yarn test`
-- Location: `src/__tests__/` and `src/components/__tests__/`
-- Mock patterns: Redux store mocked via `redux-mock-store`, native modules mocked in `__mocks__/`
-- Requirement: Add tests for any logic, don't just suggest - implement them
-
-### Styling
-- Use `react-native-paper` theme for consistent colors/typography
-- Get theme via `useTheme()` hook, access via `theme.colors.primary` etc
-- StyleSheet.create for component styles, avoid inline styles
-- Responsive: `useWindowShape()` hook for orientation, `useSafeAreaInsets()` for safe areas
-
-## Key Files
-
-- `App.tsx`: Entry point with Redux Provider, PersistGate, ErrorBoundary, navigation root
-- `src/store.ts`: Redux store config with persistence and migrations
-- `src/modules/sqlUtil.ts`: Database initialization, remote updates, next-launch adoption
-- `src/navigation/RootStackNavigator.tsx`: Main navigation structure
-- `package.json`: Scripts for build/deploy/version management
-- `deploy/deploy-*.sh`: Automated deployment scripts for both platforms
-
-## Development Workflow
-
-### Running the App
-```bash
-yarn start              # Start Metro bundler
-yarn ios                # Build and run iOS simulator
-yarn android            # Build and run Android emulator
-yarn test               # Run Jest tests
-```
-
-### iOS First Run
-```bash
-bundle install          # Install Ruby gems (CocoaPods)
-bundle exec pod install # Install iOS native dependencies
-```
-
-### Common Tasks
-- **Add dependency**: `yarn add <package>`, then `cd ios && bundle exec pod install` for native modules
-- **Clear caches**: For weird errors, clear Metro cache (`yarn start --reset-cache`), rebuild native (`yarn ios/android`)
-- **Update DB locally**: Run `yarn downloadLatestSearchDb` (TypeScript script in `scripts/`)
-
-## Comments & Commit Messages
-- prefer lowercase for comments and commit messages
-- avoid "the" and "a" unless necessary
-- be concise but descriptive
-
-## Testing Requirements
-When implementing features with logic:
-- Add unit tests in parallel with implementation
-- Place tests in appropriate `__tests__/` directory
-- Mock external dependencies (native modules, network, storage)
-- Test both success and error paths for async operations
+- UI: `web/`, with `@/` imports. Preserve the original Vollkorn/Lato fonts, blue theme, mobile tabs and score layout. Desktop uses a sidebar and split list/score layout.
+- Data: read-only SQLite WASM in `web/lib/catalog.worker.ts`; keep long work off the UI thread. Validate and persist a downloaded catalog before adopting it. Broken updates must preserve the working catalog. Background updates are adopted next launch.
+- User state: versioned browser-local storage in `web/lib/store.tsx`; use its `update` API so storage failures are surfaced. Backup JSON must remain compatible with native favorites/labels exports. Labels do not imply favorites.
+- Media: use `web/lib/media.ts` and the restricted same-origin handler in `server/media.mjs`. Preserve URL/redirect allowlisting, MIME checks, and byte-range behavior.
+- PWA: configured in `vite.config.ts`. Application updates require an explicit user action; offline navigation must include lazy viewer/worker assets and the bundled catalog.
+- Original native source/platform files remain as references and must not be imported into the web runtime. Assets are shared from `src/assets/`.
+- Use `yarn lint`, `yarn test`, `yarn build`, and `yarn test:e2e`. Browser tests run against the production server. Add behavioral coverage for meaningful logic changes.

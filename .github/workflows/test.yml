@@ -8,32 +8,34 @@ on:
 
 jobs:
 
-  test-js:
+  test-web:
     runs-on: ubuntu-latest
     steps:
-      - name: checkout repo
-        uses: actions/checkout@v4
+      - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
-          cache: yarn
-      - name: install typescript dependencies
-        shell: bash
+          node-version: '22'
+      - name: enable repository package manager
+        run: corepack enable
+      - name: install dependencies
+        run: yarn install --immutable
+      - name: lint and unit tests
         run: |
-          yarn install --immutable
-      - name: test the app
-        shell: bash
-        run: |
+          yarn lint
           yarn test
-      - name: typecheck the app
-        shell: bash
-        # Using --noEmit because we only care about typechecking, not compiling
-        run: |
-          yarn run tsc --noEmit
-      - name: lint the app
-        shell: bash
-        run: |
-          yarn run eslint src
+      - name: production build
+        run: yarn build
+      - name: install browsers
+        run: yarn playwright install --with-deps chromium webkit
+      - name: browser tests
+        run: yarn test:e2e
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: browser-test-results
+          path: |
+            playwright-report/
+            test-results/
 
   test-py:
     runs-on: 'ubuntu-latest'

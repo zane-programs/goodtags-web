@@ -96,3 +96,13 @@ ios.sim.release.*/
 # Python
 __pycache__/
 *.pyc
+
+# Generated web assets and browser test output
+/public/audio/
+/public/fonts/
+/public/data/
+/playwright-report/
+/test-results/
+
+# Playwright MCP session logs
+/.playwright-mcp/

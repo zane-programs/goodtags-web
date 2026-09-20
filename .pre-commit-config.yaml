@@ -14,6 +14,6 @@ repos:
         entry: yarn run eslint
         language: system
         types: [file]
-        files: \.(ts|tsx|js|jsx)$
+        files: ^(web/|server/|vite\.config\.ts$|playwright\.config\.ts$|e2e/web/)
         pass_filenames: true
         verbose: true

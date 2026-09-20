@@ -1,97 +1,74 @@
-This is a new [**React Native**](https://reactnative.dev) project, bootstrapped using [`@react-native-community/cli`](https://github.com/react-native-community/cli).
+# goodtags for the web
 
-# Getting Started
+A local-first React web port of Kenji Matsuoka’s goodtags app, using **React 19, shadcn/ui, Tailwind CSS v4, TypeScript, and Vite**. Browse barbershop tags, view scores, practice learning tracks, and keep favorites and labels on your device.
 
-> **Note**: Make sure you have completed the [Set Up Your Environment](https://reactnative.dev/docs/set-up-your-environment) guide before proceeding.
+## Run
 
-## Step 1: Start Metro
-
-First, you will need to run **Metro**, the JavaScript build tool for React Native.
-
-To start the Metro dev server, run the following command from the root of your React Native project:
+Requires Node **22.12+** and the repository’s Yarn 4 release.
 
 ```sh
-# Using npm
-npm start
-
-# OR using Yarn
-yarn start
+corepack enable
+yarn install --immutable
+yarn dev
 ```
 
-## Step 2: Build and run your app
-
-With Metro running, open a new terminal window/pane from the root of your React Native project, and use one of the following commands to build and run your Android or iOS app:
-
-### Android
+If Corepack is unavailable, use `node .yarn/releases/yarn-4.12.0.cjs` in place of `yarn`.
 
 ```sh
-# Using npm
-npm run android
-
-# OR using Yarn
-yarn android
+yarn build     # typecheck + production build + offline service worker
+yarn start     # production server at http://localhost:4173
+yarn test      # unit tests against the real bundled catalog
+yarn lint
+yarn playwright install chromium webkit
+yarn test:e2e  # production-browser checks (build first)
 ```
 
-### iOS
+`PORT` configures the production server. `yarn preview` also supports the media bridge. Development mode deliberately does not register a service worker: use the production build to test installation and offline behavior.
 
-For iOS, remember to install CocoaPods dependencies (this only needs to be run on first clone or after updating native deps).
+## What is included
 
-The first time you create a new project, run the Ruby bundler to install CocoaPods itself:
+- Popular, classic, easy, new, random, search, favorites, history, and labeled collections.
+- Original Vollkorn/Lato fonts, blue theme, mobile navigation, and compact tag rows. Desktop adds a persistent sidebar and a split list/score workspace.
+- Full-text offline search of the bundled 7,021-tag catalog, collection/part/media filters, and sorting.
+- Image and multipage PDF scores, zoom controls, learning-track selection/playback/seeking, the original recorded pitch pipe, and YouTube performances.
+- Independent favorites and labels, label rename/reorder/delete, 50-entry history, font preference, and screen wake lock where supported.
+- Native-compatible JSON backup/restore with merge behavior and validation; unavailable tag IDs are preserved.
+- An installable PWA, offline application/catalog/fonts/pitch audio, cached scores, explicit offline media downloads, and opt-in application updates.
 
-```sh
-bundle install
-```
+## Deploy
 
-Then, and every time you update your native dependencies, run:
+Deploy the Node application behind HTTPS:
 
-```sh
-bundle exec pod install
-```
+1. Install with `yarn install --immutable`.
+2. Build with `yarn build`.
+3. Run `yarn start`, setting `PORT` as needed.
+4. Route the HTTPS origin to this process, including `/media` and all application routes.
 
-For more information, please visit [CocoaPods Getting Started guide](https://guides.cocoapods.org/using/getting-started.html).
+The app currently expects the **root of an origin**, not a subdirectory. There are no API keys, accounts, or external databases to configure. User libraries remain in the browser; the server is stateless.
 
-```sh
-# Using npm
-npm run ios
+**Do not deploy only `dist/` to a static host without the media bridge.** The source content host does not send CORS headers for scores and tracks. `server/media.mjs` is a restricted same-origin streaming bridge with HTTPS host validation, redirect checks, and byte-range support. Vite mounts the same handler in development/preview. The canonical tag database is downloaded directly from its CORS-enabled GitHub Pages origin.
 
-# OR using Yarn
-yarn ios
-```
+Install from the browser’s install menu on supported Android/desktop browsers. On iPhone/iPad, use Safari → Share → Add to Home Screen. The app includes instructions when a browser does not expose an installation prompt. HTTPS is required in production for service workers, installation, and other secure-context APIs.
 
-If everything is set up correctly, you should see your new app running in the Android Emulator, iOS Simulator, or your connected device.
+## Data and offline behavior
 
-This is one way to run your app — you can also build it directly from Android Studio or Xcode.
+- Favorites, labels, history, preferences, and selected voice part use versioned browser-local storage; writes that fail do not report success. Tabs receive storage changes.
+- The read-only catalog runs through SQLite WASM in a dedicated worker. Downloaded catalogs live in IndexedDB. Automatic updates are adopted on the next launch; Data → refresh adopts a validated download immediately.
+- The bundled snapshot contains a stale derived FTS index. Catalog validation repairs that index in memory, then rechecks integrity; canonical data corruption, incompatible schemas, and incomplete downloads are rejected.
+- The service worker precaches roughly 8 MB of application assets including the catalog. Opened scores are cached; **Save media offline** downloads a tag’s score and all tracks. The media cache is bounded and may be evicted by the browser. Videos require a connection.
+- Clearing media cache keeps the catalog and personal library. Clearing browser/site data removes local data. Back up favorites and labels before changing browsers or devices.
+- Browsers control system status bars and may deny wake locks. The native status-bar toggle is replaced by supported fullscreen controls and installed-app behavior.
 
-## Step 3: Modify your app
+See [the migration notes](docs/web-migration.md) for architecture, parity details, and verification boundaries.
 
-Now that you have successfully run the app, let's make changes!
+## Repository layout
 
-Open `App.tsx` in your text editor of choice and make some changes. When you save, your app will automatically update and reflect these changes — this is powered by [Fast Refresh](https://reactnative.dev/docs/fast-refresh).
+- `web/`: active React DOM application and tests.
+- `server/`: production HTTP server and restricted media bridge.
+- `vite.config.ts`: Tailwind, worker bundling, PWA manifest, and caching.
+- `components.json`, `web/components/ui/`: shadcn/ui configuration and source components.
+- `src/assets/`: original fonts, audio, artwork, and SQLite seed. `scripts/prepare-web-assets.mjs` copies these into ignored public directories during development/build.
+- `e2e/web/`: desktop Chromium, mobile Chromium, and iPhone-sized WebKit tests.
+- `src/` (other than assets), `ios/`, `android/`, and the old native entry/configuration files: preserved as migration references; they are not imported or built by the web app. `legacy/` contains the original package and setup references. Native builds require the pre-port revision’s dependency graph.
 
-When you want to forcefully reload, for example to reset the state of your app, you can perform a full reload:
-
-- **Android**: Press the <kbd>R</kbd> key twice or select **"Reload"** from the **Dev Menu**, accessed via <kbd>Ctrl</kbd> + <kbd>M</kbd> (Windows/Linux) or <kbd>Cmd ⌘</kbd> + <kbd>M</kbd> (macOS).
-- **iOS**: Press <kbd>R</kbd> in iOS Simulator.
-
-## Congratulations! :tada:
-
-You've successfully run and modified your React Native App. :partying_face:
-
-### Now what?
-
-- If you want to add this new React Native code to an existing application, check out the [Integration guide](https://reactnative.dev/docs/integration-with-existing-apps).
-- If you're curious to learn more about React Native, check out the [docs](https://reactnative.dev/docs/getting-started).
-
-# Troubleshooting
-
-If you're having issues getting the above steps to work, see the [Troubleshooting](https://reactnative.dev/docs/troubleshooting) page.
-
-# Learn More
-
-To learn more about React Native, take a look at the following resources:
-
-- [React Native Website](https://reactnative.dev) - learn more about React Native.
-- [Getting Started](https://reactnative.dev/docs/environment-setup) - an **overview** of React Native and how setup your environment.
-- [Learn the Basics](https://reactnative.dev/docs/getting-started) - a **guided tour** of the React Native **basics**.
-- [Blog](https://reactnative.dev/blog) - read the latest official React Native **Blog** posts.
-- [`@facebook/react-native`](https://github.com/facebook/react-native) - the Open Source; GitHub **repository** for React Native.
+The original project’s MIT license and attribution are retained. Tag content remains hosted by [barbershoptags.com](https://www.barbershoptags.com/).

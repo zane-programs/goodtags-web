@@ -1,53 +1,19 @@
-# building and contributing to goodtags
+# Contributing to goodtags web
 
-# build
+Use Node 22.12+ and the checked-in Yarn 4 release. Run `yarn install --immutable`, then `yarn dev`.
 
-## basics
+The active application is in `web/`; retain the original fonts, colors, mobile hierarchy, offline catalog behavior, and native-compatible backup format when making changes. Keep platform-specific code in browser adapters rather than importing React Native dependencies.
 
-This is a react native application. If you're not already set up to build react native cli applications,
-head to the [react native environment setup](https://reactnative.dev/docs/environment-setup) and follow
-the instructions under the **React Native CLI Quickstart** tab.
+Before submitting changes:
 
-For Macs with Apple silicon, I recommend `brew install` instead of `sudo gem install` for cocoapods.
+```sh
+yarn lint
+yarn test
+yarn build
+yarn playwright install chromium webkit
+yarn test:e2e
+```
 
-## yarn
+Use `yarn format` for the web source. Add behavioral tests for meaningful changes to data, media, or browser flows. Test PWA functionality against a production build, including offline reloads. Keep generated assets, caches, screenshots, and test reports out of commits.
 
-- install a [modern version of yarn](https://yarnpkg.com/getting-started/install)
-- `yarn install`
-
-## link fonts
-
-- `npm install -g npx`
-- `npx react-native-asset`
-
-## start the metro bundler
-
-- `yarn start`
-
-## build and launch goodtags in an android emulator
-
-- `yarn android`
-
-This targets the default AVD (see `DEFAULT_AVD` in `scripts/android-install.sh`),
-starting it if it isn't already running. To use a different one, set `ANDROID_AVD`
-(e.g. `ANDROID_AVD=Pixel_Tablet_API_36 yarn android`) or pass it directly:
-`./scripts/android-install.sh debug Pixel_Tablet_API_36`. Use `device` instead of
-an AVD name to install on a connected phone.
-
-## build and launch goodtags in an ios simulator
-
-- `bundle install`
-- `yarn pod`
-- `yarn ios`
-
-# test
-
-- `yarn test`
-
-# contribute
-
-- create a fork
-- submit a PR
-- make sure unit tests pasts
-- if you add anything that has a logic element, be sure to add tests for that logic
-- other unit tests are always welcome
+Read [README.md](README.md) for serving/deployment and [docs/web-migration.md](docs/web-migration.md) for native feature mapping. Original native setup instructions are retained in `legacy/README.native.md`.

@@ -1,14 +1,11 @@
 {
-  "extends": "@react-native/typescript-config",
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["**/node_modules", "**/Pods"],
   "compilerOptions": {
-    "types": ["jest", "node"],
-    "paths": {
-      "@app/*": ["./src/*"],
-      "react-native-paper/lib/module/*": [
-        "./node_modules/react-native-paper/lib/typescript/*"
-      ]
-    }
-  }
+    "target": "ES2022", "lib": ["ES2022", "DOM", "DOM.Iterable"],
+    "module": "ESNext", "moduleResolution": "Bundler", "jsx": "react-jsx",
+    "strict": true, "skipLibCheck": true, "esModuleInterop": true,
+    "resolveJsonModule": true, "isolatedModules": true, "noEmit": true,
+    "types": ["vite/client", "vite-plugin-pwa/client"],
+    "baseUrl": ".", "paths": { "@/*": ["web/*"] }
+  },
+  "include": ["web", "vite.config.ts"]
 }
