@@ -238,7 +238,7 @@ test('PWA manifest, offline catalog and direct-route reload', async ({
   // instead, proving real offline navigation without changing app behavior.
   const isolated =
     browserName === 'webkit'
-      ? fork('server/index.mjs', { env: { ...process.env, PORT: '0' }, silent: true })
+      ? fork('scripts/serve.mjs', { env: { ...process.env, PORT: '0' }, silent: true })
       : undefined
   let origin = 'http://localhost:4173'
   if (isolated) {

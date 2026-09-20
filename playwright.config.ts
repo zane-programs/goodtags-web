@@ -20,7 +20,7 @@ export default defineConfig({
     { name: 'mobile-webkit', use: { ...devices['iPhone 13'] } },
   ],
   webServer: {
-    command: 'node server/index.mjs',
+    command: 'node scripts/serve.mjs',
     url: 'http://localhost:4173',
     reuseExistingServer: !process.env.CI,
   },

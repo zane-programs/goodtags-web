@@ -106,3 +106,14 @@ __pycache__/
 
 # Playwright MCP session logs
 /.playwright-mcp/
+
+# Cloudflare
+/.wrangler/
+.dev.vars*
+
+# OpenTofu / Terraform (state and variables are per-deployer and may hold secrets)
+.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+!*.tfvars.example

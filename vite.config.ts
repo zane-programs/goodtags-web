@@ -3,7 +3,23 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 import { fileURLToPath } from 'node:url'
-import { mediaHandler } from './server/media.mjs'
+import type { Connect } from 'vite'
+import { handleMedia } from './worker/media'
+
+// Development and preview run the Worker's media bridge in-process, without an edge cache.
+const media: Connect.NextHandleFunction = (req, res) => {
+  const headers = new Headers()
+  for (const [name, value] of Object.entries(req.headers))
+    if (typeof value === 'string') headers.set(name, value)
+  const request = new Request(new URL(req.originalUrl || '/', 'http://localhost'), {
+    method: req.method,
+    headers,
+  })
+  void handleMedia(request, { fetch }).then(async response => {
+    res.writeHead(response.status, Object.fromEntries(response.headers))
+    res.end(Buffer.from(await response.arrayBuffer()))
+  })
+}
 export default defineConfig({
   plugins: [
     react(),
@@ -11,14 +27,10 @@ export default defineConfig({
     {
       name: 'goodtags-media',
       configureServer(server) {
-        server.middlewares.use('/media', (req, res) => {
-          void mediaHandler(req, res)
-        })
+        server.middlewares.use('/media', media)
       },
       configurePreviewServer(server) {
-        server.middlewares.use('/media', (req, res) => {
-          void mediaHandler(req, res)
-        })
+        server.middlewares.use('/media', media)
       },
     },
     VitePWA({
@@ -75,7 +87,7 @@ export default defineConfig({
   ],
   resolve: { alias: { '@': fileURLToPath(new URL('./web', import.meta.url)) } },
   test: {
-    include: ['web/**/*.test.{ts,tsx}', 'server/**/*.test.mjs'],
+    include: ['web/**/*.test.{ts,tsx}', 'worker/**/*.test.ts'],
     environment: 'jsdom',
     setupFiles: ['./web/test/setup.ts'],
   },
