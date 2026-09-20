@@ -118,7 +118,8 @@ function SearchForm({
             value={filters.collection}
             onValueChange={value => {
               blur()
-              if (value) setFilters(f => ({ ...f, collection: value as SearchFilters['collection'] }))
+              if (value)
+                setFilters(f => ({ ...f, collection: value as SearchFilters['collection'] }))
             }}
           >
             <ToggleGroupItem value="All">all</ToggleGroupItem>

@@ -35,7 +35,11 @@ export function sortActions(
 ): MenuAction[] {
   return orders
     .filter(order => order !== current)
-    .map(order => ({ icon: sortIcons[order], label: sortLabels[order], onPress: () => setSort(order) }))
+    .map(order => ({
+      icon: sortIcons[order],
+      label: sortLabels[order],
+      onPress: () => setSort(order),
+    }))
 }
 
 /** Where a list's action menu starts: below the header, as FABDown positions it. */

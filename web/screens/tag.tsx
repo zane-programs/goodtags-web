@@ -29,7 +29,7 @@ import { AppHeader, BackButton } from '@/components/app-header'
 import { NoteGlyph } from '@/components/note-glyph'
 import { Button, IconButton } from '@/components/ui/button'
 import { Checkbox } from '@/components/ui/checkbox'
-import { Drawer, DrawerContent } from '@/components/ui/drawer'
+import { DetentDrawer } from '@/components/ui/drawer'
 import { Icon } from '@/components/ui/icon'
 import { Separator } from '@/components/ui/separator'
 import { snackbar } from '@/components/ui/snackbar'
@@ -117,7 +117,11 @@ function useTrackPlayer(url: string | undefined) {
     const fail = () => {
       setLoading(false)
       setPlaying(false)
-      if (player.src) snackbar('Failed to load track: check your connection', { duration: 4000, action: 'dismiss' })
+      if (player.src)
+        snackbar('Failed to load track: check your connection', {
+          duration: 4000,
+          action: 'dismiss',
+        })
     }
     player.addEventListener('playing', on)
     player.addEventListener('pause', off)
@@ -220,7 +224,12 @@ function InfoSheet({ tag }: { tag: Tag }) {
               <dt className="min-w-[120px]">tracks:</dt>
               <dd className="line-clamp-2 min-w-0">
                 {quartetUrl ? (
-                  <a className="text-native-link underline" href={quartetUrl} target="_blank" rel="noreferrer">
+                  <a
+                    className="text-native-link underline"
+                    href={quartetUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {tag.quartet}
                   </a>
                 ) : (
@@ -266,7 +275,9 @@ function TagLayout({
     return () => clearTimeout(timer)
   }, [tag.id, focused, update])
 
-  const tracks = tag.tracks.filter(track => /mp3/i.test(track.fileType) || /\.mp3(\?|$)/i.test(track.url))
+  const tracks = tag.tracks.filter(
+    track => /mp3/i.test(track.fileType) || /\.mp3(\?|$)/i.test(track.url),
+  )
   const track =
     tracks.find(t => t.part === library.selectedPart) ??
     tracks.find(t => t.part === 'AllParts') ??
@@ -312,13 +323,17 @@ function TagLayout({
         )}
       >
         <div className="flex h-12 min-w-[60px] items-center">
-          <IconButton label="back" className={cn(headerButton, 'mx-1.5 mb-1.5')} onClick={onBack ?? back}>
+          <IconButton
+            label="back"
+            className={cn(headerButton, 'mx-1.5 mb-1.5')}
+            onClick={onBack ?? back}
+          >
             <Icon path={mdiChevronLeft} size={42} />
           </IconButton>
         </div>
         <div className="mb-2.5 flex h-12 min-w-0 flex-1 items-end">
-          <span className="flex min-w-[50px] items-baseline rounded-sm bg-primary px-2 py-0.5 text-[18px] leading-[26px] text-on-primary tablet:min-w-20 tablet:rounded-[12px] tablet:px-3 tablet:py-1 tablet:text-[26px] tablet:leading-9">
-            <span className="text-[14px] tracking-[3px] tablet:text-[16px]">#</span>
+          <span className="flex min-w-[50px] items-baseline rounded-sm bg-primary px-2 py-0.5 text-[18px] leading-[26px] text-on-primary ipad:min-w-20 ipad:rounded-[12px] ipad:px-3 ipad:py-1 ipad:text-[26px] ipad:leading-9">
+            <span className="text-[14px] tracking-[3px] ipad:text-[16px]">#</span>
             <span className="mr-[7px]">{tag.id}</span>
           </span>
         </div>
@@ -445,13 +460,19 @@ function TagLayout({
         actions={actions}
         className="pt-[calc(var(--spacing-safe-t)+45px)] pr-safe-r"
       />
-      <Drawer open={sheet === 'info'} onOpenChange={open => !open && setSheet(null)}>
-        <DrawerContent title="tag info">
-          <InfoSheet tag={tag} />
-        </DrawerContent>
-      </Drawer>
-      <Drawer open={sheet === 'tracks'} onOpenChange={open => !open && setSheet(null)}>
-        <DrawerContent title="tracks">
+      <DetentDrawer
+        title="tag info"
+        open={sheet === 'info'}
+        onOpenChange={open => !open && setSheet(null)}
+      >
+        <InfoSheet tag={tag} />
+      </DetentDrawer>
+      <DetentDrawer
+        title="tracks"
+        open={sheet === 'tracks'}
+        onOpenChange={open => !open && setSheet(null)}
+      >
+        <>
           <div className="flex justify-center px-[max(20px,calc(var(--spacing-safe-l)+20px))] pb-[max(20px,var(--spacing-safe-b))]">
             <div role="radiogroup" aria-label="part" className="-ml-[17px] py-3 pr-1 pl-2">
               {tracks.map(item => (
@@ -472,8 +493,8 @@ function TagLayout({
               ))}
             </div>
           </div>
-        </DrawerContent>
-      </Drawer>
+        </>
+      </DetentDrawer>
     </div>
   )
 }
@@ -547,7 +568,10 @@ export function TagLabelsScreen() {
       <div className="mx-[15px] my-2.5 flex min-h-0 flex-1 flex-col pr-safe-r pl-safe-l">
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain pt-2.5">
           {library.labels.map(label => (
-            <label key={label.name} className="flex cursor-pointer items-center py-[5px] pr-4 text-body-lg select-none">
+            <label
+              key={label.name}
+              className="flex cursor-pointer items-center py-[5px] pr-4 text-body-lg select-none"
+            >
               <Checkbox
                 checked={label.ids.includes(id)}
                 onCheckedChange={checked =>
@@ -558,7 +582,10 @@ export function TagLabelsScreen() {
                         ? item
                         : {
                             ...item,
-                            ids: checked === true ? [...new Set([...item.ids, id])] : item.ids.filter(i => i !== id),
+                            ids:
+                              checked === true
+                                ? [...new Set([...item.ids, id])]
+                                : item.ids.filter(i => i !== id),
                           },
                     ),
                   }))
@@ -568,7 +595,11 @@ export function TagLabelsScreen() {
             </label>
           ))}
         </div>
-        <Button variant="tonal" className="m-[15px] self-start" onClick={() => push(`/labels/new?tag=${id}`)}>
+        <Button
+          variant="tonal"
+          className="m-[15px] self-start"
+          onClick={() => push(`/labels/new?tag=${id}`)}
+        >
           <Icon path={mdiPlus} size={18} />
           new label
         </Button>
@@ -595,7 +626,10 @@ export function TagVideosScreen() {
           }}
         >
           {videos.map((video, index) => (
-            <div key={video.code} className="flex w-full shrink-0 snap-center snap-always items-center justify-center py-2.5">
+            <div
+              key={video.code}
+              className="flex w-full shrink-0 snap-center snap-always items-center justify-center py-2.5"
+            >
               <div className="aspect-video max-h-[75dvh] w-full overflow-hidden rounded-[12px] border-2 border-outline bg-surface-variant desktop:w-auto desktop:h-[75dvh]">
                 {index === current && focused && (
                   <iframe
@@ -615,7 +649,10 @@ export function TagVideosScreen() {
             {videos.map((video, index) => (
               <span
                 key={video.code}
-                className={cn('mx-1 size-2 rounded-xs', index === current ? 'bg-primary' : 'bg-surface-variant')}
+                className={cn(
+                  'mx-1 size-2 rounded-xs',
+                  index === current ? 'bg-primary' : 'bg-surface-variant',
+                )}
               />
             ))}
           </div>

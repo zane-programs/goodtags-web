@@ -21,7 +21,9 @@ async function enter(page: Page, path = '/') {
   if (await arrow.isVisible().catch(() => false)) await arrow.click()
 }
 
-test('welcome, home, a collection, and stepping through tags like the native stack', async ({ page }) => {
+test('welcome, home, a collection, and stepping through tags like the native stack', async ({
+  page,
+}) => {
   await page.goto('/')
   await expect(page.getByText('Welcome to')).toBeVisible()
   await button(page, 'enter goodtags').click()
@@ -100,7 +102,9 @@ test('search dialog, filters, sorting, and tabs that keep their state', async ({
   await dialog.getByRole('button', { name: 'search' }).click()
   await expect(dialog).toBeHidden()
   await expect(rows(page).first()).toBeVisible()
-  await expect(page.locator('main, div').getByText('classic', { exact: true }).and(live(page)).last()).toBeVisible()
+  await expect(
+    page.locator('main, div').getByText('classic', { exact: true }).and(live(page)).last(),
+  ).toBeVisible()
   const byDownloads = await rows(page).first().getAttribute('data-tag-id')
 
   await button(page, 'menu').click()
@@ -126,8 +130,10 @@ test('favorites, labels, backup and restore persist', async ({ page }) => {
   await tab(page, 'faves').click()
   await expect(rows(page)).toHaveCount(1)
 
+  // The home tab comes back where it was left; pressing it again pops to its first screen.
   await tab(page, 'home').click()
-  if (await button(page, 'back').isVisible()) await button(page, 'back').click()
+  await expect(rows(page)).toHaveCount(50)
+  await tab(page, 'home').click()
   await homeRow(page, 'data').click()
   const download = page.waitForEvent('download')
   await homeRow(page, 'backup').click()
@@ -146,7 +152,10 @@ test('favorites, labels, backup and restore persist', async ({ page }) => {
 
   await button(page, 'menu').click()
   await page.getByRole('button', { name: 'remove all favorites' }).click()
-  await page.getByRole('dialog', { name: 'remove all favorites' }).getByRole('button', { name: 'remove all favorites' }).click()
+  await page
+    .getByRole('dialog', { name: 'remove all favorites' })
+    .getByRole('button', { name: 'remove all favorites' })
+    .click()
   await expect(page.getByText('to add favorites,')).toBeVisible()
 })
 
@@ -177,13 +186,20 @@ test('labels: create, rename, reorder, delete', async ({ page }) => {
     await page.keyboard.press(key)
     await page.waitForTimeout(150)
   }
-    const order = () =>
-    page.evaluate(() => JSON.parse(localStorage.getItem('goodtags.library.v1')!).labels.map((l: { name: string }) => l.name))
+  const order = () =>
+    page.evaluate(() =>
+      JSON.parse(localStorage.getItem('goodtags.library.v1')!).labels.map(
+        (l: { name: string }) => l.name,
+      ),
+    )
   expect(await order()).toEqual(['warmups', 'second'])
 
   await button(page, 'rename second').click()
   await button(page, 'delete second').click()
-  await page.getByRole('dialog', { name: 'delete label' }).getByRole('button', { name: 'delete label' }).click()
+  await page
+    .getByRole('dialog', { name: 'delete label' })
+    .getByRole('button', { name: 'delete label' })
+    .click()
   expect(await order()).toEqual(['warmups'])
 })
 
@@ -213,7 +229,11 @@ test('nothing scrolls the page sideways at any supported width', async ({ page }
   expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
 })
 
-test('PWA manifest, offline catalog and direct-route reload', async ({ page, context, browserName }) => {
+test('PWA manifest, offline catalog and direct-route reload', async ({
+  page,
+  context,
+  browserName,
+}) => {
   // WebKit's setOffline emulation blocks SW responses too. Stop an isolated origin
   // instead, proving real offline navigation without changing app behavior.
   const isolated =

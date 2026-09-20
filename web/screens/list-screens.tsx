@@ -68,9 +68,21 @@ const collections: Record<
   CollectionKind,
   { icon: string; sorts: [Sort, Sort]; params: SearchParams }
 > = {
-  popular: { icon: mdiStar, sorts: ['downloads', 'alpha'], params: { sort: 'downloads', limit: 50 } },
-  classic: { icon: mdiPillar, sorts: ['alpha', 'id'], params: { collection: 'classic', limit: 125 } },
-  easy: { icon: mdiTeddyBear, sorts: ['alpha', 'id'], params: { collection: 'easytags', limit: 125 } },
+  popular: {
+    icon: mdiStar,
+    sorts: ['downloads', 'alpha'],
+    params: { sort: 'downloads', limit: 50 },
+  },
+  classic: {
+    icon: mdiPillar,
+    sorts: ['alpha', 'id'],
+    params: { collection: 'classic', limit: 125 },
+  },
+  easy: {
+    icon: mdiTeddyBear,
+    sorts: ['alpha', 'id'],
+    params: { collection: 'easytags', limit: 125 },
+  },
   new: { icon: mdiLeaf, sorts: ['newest', 'alpha'], params: { sort: 'newest', limit: 100 } },
 }
 
@@ -163,7 +175,9 @@ export function FavoritesScreen() {
       setTagList(listPath, {
         tags:
           current === 'newest'
-            ? [...tags].sort((a, b) => (added.get(b.id) || '0').localeCompare(added.get(a.id) || '0'))
+            ? [...tags].sort((a, b) =>
+                (added.get(b.id) || '0').localeCompare(added.get(a.id) || '0'),
+              )
             : sortTags(tags, current),
       })
     },
@@ -220,7 +234,11 @@ export function HistoryScreen() {
       emptyText="tags you have viewed will show up here"
       actions={[
         ...sortActions(['alpha', 'newest', 'id'], sort, setSort),
-        { icon: mdiBroom, label: 'clear history', onPress: () => update(s => ({ ...s, history: [] })) },
+        {
+          icon: mdiBroom,
+          label: 'clear history',
+          onPress: () => update(s => ({ ...s, history: [] })),
+        },
       ]}
     />
   )
@@ -245,7 +263,9 @@ export function LabeledScreen() {
       showBack
       showDownloads={false}
       emptyText="no tags with this label yet"
-      actions={[{ icon: sortIcons[other], label: sortLabels[other], onPress: () => setSort(other) }]}
+      actions={[
+        { icon: sortIcons[other], label: sortLabels[other], onPress: () => setSort(other) },
+      ]}
     />
   )
 }

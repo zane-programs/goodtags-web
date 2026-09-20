@@ -4,6 +4,8 @@ Design, architecture, and background docs for goodtags. Keep each in sync with t
 it describes — when you change that area, update the doc in the same PR.
 
 - [web-migration.md](web-migration.md) — active React web architecture, native feature mapping, browser persistence, PWA lifecycle, and verification. Start here for the web fork. The documents below describe the preserved native implementation unless noted otherwise.
+- [web-design-system.md](web-design-system.md) — how the web UI is built: tokens-only `web/styles.css` derived from the native theme, the themed shadcn/ui components, the native-style navigator, and the parity capture workflow. **Read before touching anything under `web/components`, `web/navigation` or `web/styles.css`.** Styling is Tailwind utilities only; `web/styles.test.ts` enforces it.
+- [mobile-parity.md](mobile-parity.md) — what has been compared with the iOS app (and how to rebuild the native reference in the simulator), deliberate differences, remaining device checks. Per-screen native measurements with file:line citations: [parity-home-browse.md](parity-home-browse.md), [parity-tag-screen.md](parity-tag-screen.md), [parity-settings-labels.md](parity-settings-labels.md), [parity-ios-reference.md](parity-ios-reference.md).
 - [search-database.md](search-database.md) — architecture of the offline tag-search
   SQLite database: how it's generated server-side, seeded from the bundle, updated over
   the network, adopted, and queried on-device, plus the hard-won invariants in

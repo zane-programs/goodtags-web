@@ -63,7 +63,11 @@ export function OptionsScreen() {
         })}
         {pwa.canPrompt && (
           <ItemGroup className="mt-5 bg-elevation-1">
-            <NavRow icon={mdiCellphoneArrowDown} title="install goodtags" onPress={() => void pwa.install()} />
+            <NavRow
+              icon={mdiCellphoneArrowDown}
+              title="install goodtags"
+              onPress={() => void pwa.install()}
+            />
           </ItemGroup>
         )}
       </div>
@@ -252,7 +256,10 @@ export function LogsScreen() {
             {entries.map(entry => (
               <li
                 key={entry.id}
-                className={cn('my-1 border-l-4 bg-surface-variant px-3 py-2', logColors[entry.type])}
+                className={cn(
+                  'my-1 border-l-4 bg-surface-variant px-3 py-2',
+                  logColors[entry.type],
+                )}
               >
                 <time className="mb-1 block font-mono text-[12px] leading-4 text-on-surface-variant">
                   {new Date(entry.date).toLocaleTimeString('en-GB', { hour12: false })}
@@ -264,7 +271,9 @@ export function LogsScreen() {
             ))}
           </ol>
         ) : (
-          <p className="p-8 text-center text-body-lg text-on-surface-variant">no console logs yet</p>
+          <p className="p-8 text-center text-body-lg text-on-surface-variant">
+            no console logs yet
+          </p>
         )}
       </div>
     </>

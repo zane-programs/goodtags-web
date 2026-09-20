@@ -62,7 +62,12 @@ const rootScreens: [RegExp, ScreenName, string[]][] = [
 ]
 
 let counter = 0
-function route(name: ScreenName, path: string, params: Record<string, string>, stable: boolean): Route {
+function route(
+  name: ScreenName,
+  path: string,
+  params: Record<string, string>,
+  stable: boolean,
+): Route {
   return { key: stable ? `${name}:${path}` : `${name}:${path}#${++counter}`, name, path, params }
 }
 

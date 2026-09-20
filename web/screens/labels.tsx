@@ -39,7 +39,14 @@ import { Button, IconButton } from '@/components/ui/button'
 import { ConfirmDrawer } from '@/components/ui/drawer'
 import { Icon } from '@/components/ui/icon'
 import { Input } from '@/components/ui/input'
-import { Item, ItemActions, ItemContent, ItemGroup, ItemMedia, ItemSeparator } from '@/components/ui/item'
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemMedia,
+  ItemSeparator,
+} from '@/components/ui/item'
 
 /** LabelsScreen.tsx */
 export function LabelsScreen() {
@@ -74,7 +81,9 @@ export function LabelsScreen() {
           <ItemGroup>
             {library.labels.length === 0 && (
               <Item>
-                <ItemContent className="text-[14px] leading-5 text-outline">no labels yet</ItemContent>
+                <ItemContent className="text-[14px] leading-5 text-outline">
+                  no labels yet
+                </ItemContent>
               </Item>
             )}
             {library.labels.map((label, index) => (
@@ -103,7 +112,11 @@ export function LabelsScreen() {
         </div>
       </div>
       <div className="mx-auto flex w-full max-w-3xl gap-2.5 px-[15px] pt-[15px] pb-2.5">
-        <Button variant="outlined" className="flex-1 rounded-[20px]" onClick={() => push('/labels/new')}>
+        <Button
+          variant="outlined"
+          className="flex-1 rounded-[20px]"
+          onClick={() => push('/labels/new')}
+        >
           <Icon path={mdiPlus} size={22} />
           new
         </Button>
@@ -150,8 +163,15 @@ function EditorRow({
   onRename: (next: string) => void
   onDelete: () => void
 }) {
-  const { attributes, listeners, setNodeRef, setActivatorNodeRef, transform, transition, isDragging } =
-    useSortable({ id: name })
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: name })
   const [draft, setDraft] = useState(name)
   return (
     <div

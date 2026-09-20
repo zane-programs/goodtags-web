@@ -58,7 +58,9 @@ function TabPane({ active, children }: { active: boolean; children: ReactNode })
   return (
     <div
       inert={!active}
-      className={active ? 'absolute inset-0 flex flex-col' : 'invisible absolute inset-0 flex flex-col'}
+      className={
+        active ? 'absolute inset-0 flex flex-col' : 'invisible absolute inset-0 flex flex-col'
+      }
     >
       {children}
     </div>

@@ -55,7 +55,11 @@ function ItemMedia({ className, ...props }: React.ComponentProps<'span'>) {
 
 function ItemContent({ className, ...props }: React.ComponentProps<'span'>) {
   return (
-    <span data-slot="item-content" className={cn('min-w-0 flex-1 truncate pl-4', className)} {...props} />
+    <span
+      data-slot="item-content"
+      className={cn('min-w-0 flex-1 truncate pl-4', className)}
+      {...props}
+    />
   )
 }
 

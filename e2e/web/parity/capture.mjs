@@ -27,7 +27,8 @@ const shot = async name => {
   await page.screenshot({ path: `${out}/${name}.png` })
   console.log('captured', name)
 }
-const row = name => page.locator('[data-slot="item"]:visible', { hasText: new RegExp(`^${name}$`) }).click()
+const row = name =>
+  page.locator('[data-slot="item"]:visible', { hasText: new RegExp(`^${name}$`) }).click()
 const tap = async (role, name) => page.getByRole(role, { name, exact: true }).first().click()
 
 await page.goto(base)

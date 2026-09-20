@@ -43,12 +43,12 @@ export function ActionMenu({
         {open && (
           <DialogPrimitive.Portal forceMount container={container}>
             <motion.div
-                aria-hidden="true"
-                className={cn(position, 'inset-0 z-50 bg-surface/95')}
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1, transition: { duration: 0.125, ease: inOut } }}
-                exit={{ opacity: 0, transition: { duration: 0.2, ease: inOut } }}
-              />
+              aria-hidden="true"
+              className={cn(position, 'inset-0 z-50 bg-surface/95')}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1, transition: { duration: 0.125, ease: inOut } }}
+              exit={{ opacity: 0, transition: { duration: 0.2, ease: inOut } }}
+            />
             <DialogPrimitive.Content
               forceMount
               aria-describedby={undefined}

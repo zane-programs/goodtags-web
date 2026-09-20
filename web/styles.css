@@ -165,7 +165,6 @@
   --spacing-tabbar-shallow: max(50px, calc(var(--spacing-safe-b) + 35px));
 
   --breakpoint-*: initial;
-  --breakpoint-tablet: 640px;
   --breakpoint-desktop: 1024px;
 
   /* Motion */
@@ -208,6 +207,10 @@
 
 /* The native app's "shallow screen": landscape with height <= 500 (useWindowShape.ts). */
 @custom-variant shallow (@media (orientation: landscape) and (max-height: 500px));
+
+/* iPad-class screens (the native `isTablet`): large in both dimensions, so a phone in
+   landscape does not qualify. */
+@custom-variant ipad (@media (min-width: 744px) and (min-height: 744px));
 
 /* The user's font option swaps one token; every text utility follows. */
 @layer base {

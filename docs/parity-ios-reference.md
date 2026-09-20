@@ -98,13 +98,13 @@ Sources: `src/components/TagLayout.tsx`, `src/hooks/useTagScreenStyles.ts`,
 
 ## Native rendering attempt
 
-An isolated detached worktree at `/tmp/goodtags-ios-parity-677f89f` preserves
-the original package/configuration without altering the web implementation.
-Native dependencies use the original immutable Yarn lockfile; Ruby 3.3 and
-the locked CocoaPods bundle provide the missing build tooling. Xcode 27.0
-and the iOS 26.4 Simulator runtime are available. No physical device or
-external service is modified. Rendered capture status will be recorded here
-after the simulator build attempt.
+The native app builds and runs in the iOS 26.4 Simulator from an isolated
+detached worktree of `677f89f` (original lockfile and pods). Two Xcode 27
+incompatibilities need working around; the steps, and how to run the upstream
+Maestro screenshot tour against the build, are in `mobile-parity.md`. The
+tour yields about 80 captures of version 4.3.0 on an iPhone 17 (402 × 874
+points, 62-point top inset, 34-point bottom inset), which are the reference
+the web screens were compared with.
 
 ## Acceptance boundary
 

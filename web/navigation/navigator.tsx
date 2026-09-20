@@ -71,15 +71,13 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
   )
   // A history pop we did not start is the browser's back/forward control. On touch devices
   // that is usually the system edge swipe, which already slides the page.
-  const instant =
-    type === 'POP' && !inApp.current && matchMedia('(pointer: coarse)').matches
+  const instant = type === 'POP' && !inApp.current && matchMedia('(pointer: coarse)').matches
   useEffect(() => {
     inApp.current = false
   }, [location.key])
 
   const go = useCallback(
-    (next: NavState, replace = false) =>
-      navigate(pathOf(next), { replace, state: { nav: next } }),
+    (next: NavState, replace = false) => navigate(pathOf(next), { replace, state: { nav: next } }),
     [navigate],
   )
   const value = useMemo<Navigation>(
@@ -94,9 +92,25 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
         else go(popped(state) ?? state, true)
       },
       replaceTop: (path, params) =>
-        go({ ...state, root: state.root.map((r, i, all) => (i === all.length - 1 ? { ...r, path, params } : r)) }, true),
+        go(
+          {
+            ...state,
+            root: state.root.map((r, i, all) =>
+              i === all.length - 1 ? { ...r, path, params } : r,
+            ),
+          },
+          true,
+        ),
       switchTab: tab =>
-        go({ ...state, root: [], tab, home: tab === 'home' && state.tab === 'home' ? [] : state.home }, true),
+        go(
+          {
+            ...state,
+            root: [],
+            tab,
+            home: tab === 'home' && state.tab === 'home' ? [] : state.home,
+          },
+          true,
+        ),
     }),
     [state, instant, go, navigate],
   )

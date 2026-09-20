@@ -10,6 +10,68 @@ function Drawer(props: React.ComponentProps<typeof DrawerPrimitive.Root>) {
   return <DrawerPrimitive.Root data-slot="drawer" {...props} />
 }
 
+/**
+ * A sheet with the native detents: it opens at its content height and can be dragged up to
+ * 75% and then 90% of the screen (gorhom snapPoints ['75%', '90%'] with dynamic sizing).
+ */
+function DetentDrawer({
+  open,
+  onOpenChange,
+  title,
+  children,
+}: {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  title: string
+  children: React.ReactNode
+}) {
+  const [content, setContent] = React.useState(0)
+  const [snap, setSnap] = React.useState<number | string | null>(null)
+  // Content height plus the 24px handle, tracked as the content lays out or changes.
+  const observer = React.useRef<ResizeObserver>(undefined)
+  const measure = React.useCallback((node: HTMLDivElement | null) => {
+    observer.current?.disconnect()
+    if (!node) return
+    observer.current = new ResizeObserver(() => setContent(node.offsetHeight + 24))
+    observer.current.observe(node)
+  }, [])
+  const height = typeof window === 'undefined' ? 800 : window.innerHeight
+  const points = React.useMemo(() => {
+    const first = Math.min(content || height * 0.5, height * 0.9)
+    return [`${Math.round(first)}px`, ...[0.75, 0.9].filter(f => f * height > first + 1)]
+  }, [content, height])
+  React.useEffect(() => {
+    if (open) setSnap(points[0])
+  }, [open, points])
+  return (
+    <DrawerPrimitive.Root
+      open={open}
+      onOpenChange={onOpenChange}
+      snapPoints={points}
+      activeSnapPoint={snap}
+      setActiveSnapPoint={setSnap}
+      fadeFromIndex={0}
+    >
+      <DrawerPrimitive.Portal>
+        <DrawerPrimitive.Overlay className="fixed inset-0 z-50 bg-black/30" />
+        <DrawerPrimitive.Content
+          data-slot="drawer-content"
+          aria-describedby={undefined}
+          className="fixed inset-x-0 bottom-0 z-50 mx-auto flex h-full w-full flex-col rounded-t-[15px] bg-surface font-app text-on-surface outline-none desktop:max-w-xl"
+        >
+          <DrawerPrimitive.Title className="sr-only">{title}</DrawerPrimitive.Title>
+          <div aria-hidden="true" className="flex shrink-0 justify-center p-2.5">
+            <span className="h-1 w-[7.5vw] rounded-xs bg-outline desktop:w-10" />
+          </div>
+          <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+            <div ref={measure}>{children}</div>
+          </div>
+        </DrawerPrimitive.Content>
+      </DrawerPrimitive.Portal>
+    </DrawerPrimitive.Root>
+  )
+}
+
 function DrawerContent({
   className,
   children,
@@ -18,7 +80,10 @@ function DrawerContent({
 }: React.ComponentProps<typeof DrawerPrimitive.Content> & { title: string }) {
   return (
     <DrawerPrimitive.Portal>
-      <DrawerPrimitive.Overlay data-slot="drawer-overlay" className="fixed inset-0 z-50 bg-black/30" />
+      <DrawerPrimitive.Overlay
+        data-slot="drawer-overlay"
+        className="fixed inset-0 z-50 bg-black/30"
+      />
       <DrawerPrimitive.Content
         data-slot="drawer-content"
         aria-describedby={undefined}
@@ -76,4 +141,4 @@ function ConfirmDrawer({
   )
 }
 
-export { ConfirmDrawer, Drawer, DrawerContent }
+export { ConfirmDrawer, DetentDrawer, Drawer, DrawerContent }

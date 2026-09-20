@@ -18,7 +18,14 @@ import { useNavigation } from '@/navigation/navigator'
 import { AppHeader, Logo } from '@/components/app-header'
 import { IconButton } from '@/components/ui/button'
 import { Icon } from '@/components/ui/icon'
-import { Item, ItemActions, ItemContent, ItemGroup, ItemMedia, ItemSeparator } from '@/components/ui/item'
+import {
+  Item,
+  ItemActions,
+  ItemContent,
+  ItemGroup,
+  ItemMedia,
+  ItemSeparator,
+} from '@/components/ui/item'
 
 export const homeGroups = [
   [
@@ -136,7 +143,8 @@ export function WelcomeScreen({ onEnter }: { onEnter: () => void }) {
   )
 }
 
-const link = 'rounded-full px-4 py-2.5 text-label-lg underline outline-none focus-visible:ring-3 focus-visible:ring-ring active:opacity-60'
+const link =
+  'rounded-full px-4 py-2.5 text-label-lg underline outline-none focus-visible:ring-3 focus-visible:ring-ring active:opacity-60'
 
 /** AboutScreen.tsx + AboutWithCredits.tsx */
 export function AboutScreen() {

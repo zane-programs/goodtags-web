@@ -11,7 +11,10 @@ const MAX_ZOOM = 2
 /** The native viewer's own failure view (SheetMusic.tsx); its colors are deliberately off-theme. */
 function LoadError({ uri, onRetry }: { uri: string; onRetry: () => void }) {
   return (
-    <div role="alert" className="flex h-full flex-col items-center justify-center p-5 text-center font-[system-ui]">
+    <div
+      role="alert"
+      className="flex h-full flex-col items-center justify-center p-5 text-center font-[system-ui]"
+    >
       <span className="text-[48px] leading-none">⚠️</span>
       <h2 className="mt-4 text-[18px] leading-6 font-semibold text-native-ink">
         Unable to load sheet music
@@ -125,12 +128,14 @@ export default function SheetMusic({ uri, onTap }: { uri: string; onTap: () => v
       onPointerMove={event => {
         const previous = pointers.current.get(event.pointerId)
         if (!previous) return
-        if (Math.hypot(event.clientX - previous.x, event.clientY - previous.y) > 8) moved.current = true
+        if (Math.hypot(event.clientX - previous.x, event.clientY - previous.y) > 8)
+          moved.current = true
         if (pointers.current.size !== 2 || !pinch.current) return
         pointers.current.set(event.pointerId, { x: event.clientX, y: event.clientY })
         const [a, b] = [...pointers.current.values()]
         zoomTo(
-          (pinch.current.zoom * Math.hypot(a.x - b.x, a.y - b.y)) / Math.max(1, pinch.current.distance),
+          (pinch.current.zoom * Math.hypot(a.x - b.x, a.y - b.y)) /
+            Math.max(1, pinch.current.distance),
           (a.x + b.x) / 2,
           (a.y + b.y) / 2,
         )
@@ -138,7 +143,9 @@ export default function SheetMusic({ uri, onTap }: { uri: string; onTap: () => v
       onPointerUp={event => release(event.pointerId)}
       onPointerCancel={event => release(event.pointerId)}
       onClick={() => !moved.current && onTap()}
-      onDoubleClick={event => zoomTo(zoomRef.current > 1 ? 1 : MAX_ZOOM, event.clientX, event.clientY)}
+      onDoubleClick={event =>
+        zoomTo(zoomRef.current > 1 ? 1 : MAX_ZOOM, event.clientX, event.clientY)
+      }
     >
       {!uri ? (
         <p className="p-5 text-center text-body-md">No sheet music</p>

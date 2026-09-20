@@ -11,7 +11,10 @@ export const pressable =
   'relative touch-manipulation select-none overflow-hidden outline-none [-webkit-tap-highlight-color:transparent] after:pointer-events-none after:absolute after:inset-0 after:bg-current after:opacity-0 active:after:opacity-12 focus-visible:ring-3 focus-visible:ring-ring disabled:pointer-events-none'
 
 const buttonVariants = cva(
-  cn(pressable, 'inline-flex shrink-0 cursor-pointer items-center justify-center font-app whitespace-nowrap'),
+  cn(
+    pressable,
+    'inline-flex shrink-0 cursor-pointer items-center justify-center font-app whitespace-nowrap',
+  ),
   {
     variants: {
       variant: {

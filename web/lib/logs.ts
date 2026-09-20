@@ -17,9 +17,13 @@ const listeners = new Set<() => void>()
 
 function add(type: LogType, args: unknown[]) {
   const message = args
-    .map(arg => (typeof arg === 'string' ? arg : arg instanceof Error ? arg.message : JSON.stringify(arg)))
+    .map(arg =>
+      typeof arg === 'string' ? arg : arg instanceof Error ? arg.message : JSON.stringify(arg),
+    )
     .join(' ')
-  entries = [...entries, { id: ++nextId, date: new Date().toISOString(), type, message }].slice(-MAX_LOGS)
+  entries = [...entries, { id: ++nextId, date: new Date().toISOString(), type, message }].slice(
+    -MAX_LOGS,
+  )
   listeners.forEach(listener => listener())
 }
 
