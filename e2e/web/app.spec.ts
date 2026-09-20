@@ -1,98 +1,219 @@
-import { expect, test } from '@playwright/test'
+import { test, expect, type Page } from '@playwright/test'
 import { fork } from 'node:child_process'
 import { once } from 'node:events'
+import { readFile } from 'node:fs/promises'
 
-test('home, catalog search, filters, sorting and responsive layout', async ({ page }, testInfo) => {
-  const errors: string[] = []
-  page.on('pageerror', error => errors.push(error.message))
+// Screens beneath the focused one stay mounted (as native stack screens do) and are marked
+// `inert`. During the half-second fade both are on screen, so locators target only content a
+// person could actually interact with.
+const live = (page: Page) => page.locator(':not([inert] *)')
+const rows = (page: Page) => page.locator('[data-tag-id]').and(live(page))
+const homeRow = (page: Page, name: string) =>
+  page.locator('[data-slot="item"]', { hasText: new RegExp(`^${name}$`) }).and(live(page))
+const tab = (page: Page, label: string) =>
+  page.locator('nav[aria-label="tabs"]:visible a', { hasText: new RegExp(`^${label}$`) })
+const button = (page: Page, name: string | RegExp) =>
+  page.getByRole('button', { name, exact: true }).and(live(page)).first()
+
+async function enter(page: Page, path = '/') {
+  await page.goto(path)
+  const arrow = page.getByRole('button', { name: 'enter goodtags' })
+  if (await arrow.isVisible().catch(() => false)) await arrow.click()
+}
+
+test('welcome, home, a collection, and stepping through tags like the native stack', async ({ page }) => {
   await page.goto('/')
-  await page.getByRole('button', { name: 'Enter goodtags' }).click()
-  await expect(
-    page.getByRole('main').getByRole('link', { name: 'popular', exact: true }),
-  ).toBeVisible()
-  await page.screenshot({ path: `artifacts/${testInfo.project.name}-home.png`, fullPage: true })
-  await page.getByRole('main').getByRole('link', { name: 'popular', exact: true }).click()
-  await expect(page.locator('.tag-row')).toHaveCount(50)
-  await page.goto('/search?q=smile')
-  await expect(page.locator('.tag-row').first()).toBeVisible()
-  await page.getByRole('button', { name: 'Search filters' }).click()
-  const dialog = page.getByRole('dialog')
-  await dialog.getByRole('combobox').first().selectOption('classic')
-  await dialog.getByRole('switch').first().check()
-  await dialog.getByRole('button', { name: 'show tags' }).click()
-  await expect(page.locator('.filter-chips')).toContainText('classic')
-  await page.getByRole('combobox', { name: 'Sort tags' }).selectOption('id')
-  await expect(page.locator('.tag-row').first()).toContainText('#1')
-  await page.locator('.tag-row').first().click()
-  await expect(page.getByRole('region', { name: 'Smile', exact: true })).toBeVisible()
-  await expect
-    .poll(() =>
-      page
-        .getByRole('img', { name: 'Sheet music for Smile' })
-        .evaluate((image: HTMLImageElement) => image.complete && image.naturalWidth > 0),
-    )
-    .toBe(true)
-  await page.screenshot({ path: `artifacts/${testInfo.project.name}-score.png`, fullPage: true })
-  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
-  if (testInfo.project.name.startsWith('mobile'))
-    await expect(page.locator('.browse-list')).toBeHidden()
-  else await expect(page.locator('.browse-list')).toBeVisible()
-  expect(errors).toEqual([])
+  await expect(page.getByText('Welcome to')).toBeVisible()
+  await button(page, 'enter goodtags').click()
+  await expect(homeRow(page, 'popular')).toBeVisible()
+
+  await homeRow(page, 'popular').click()
+  await expect(page).toHaveURL(/\/popular$/)
+  await expect(rows(page)).toHaveCount(50)
+  const second = await rows(page).nth(1).getAttribute('data-tag-id')
+
+  await rows(page).first().click()
+  await expect(page).toHaveURL(/\/popular\/tag\/\d+$/)
+  await expect(button(page, 'previous tag')).toBeDisabled()
+  await button(page, 'next tag').click()
+  await expect(page).toHaveURL(new RegExp(`/popular/tag/${second}$`))
+
+  // Going back reveals the same list instance, with the last-viewed row marked.
+  await button(page, 'back').click()
+  await expect(page).toHaveURL(/\/popular$/)
+  await expect(page.locator(`[data-tag-id="${second}"]`)).toHaveAttribute('aria-current', 'true')
+
+  // The browser's own back and forward walk the same stack.
+  await page.goBack()
+  await expect(homeRow(page, 'popular')).toBeVisible()
+  await page.goForward()
+  await expect(rows(page)).toHaveCount(50)
 })
 
-test('favorites, independent labels, backup restore, and persistence', async ({ page }) => {
-  await page.goto('/tag/1')
-  await page.getByRole('button', { name: 'Add favorite', exact: true }).click()
-  if (await page.getByRole('button', { name: 'Tag menu', exact: true }).isVisible())
-    await page.getByRole('button', { name: 'Tag menu', exact: true }).click()
-  await page.getByRole('button', { name: 'Tag labels', exact: true }).click()
-  await page.getByRole('textbox', { name: 'New label' }).fill('Quartet rehearsal')
-  await page.getByRole('button', { name: 'Add', exact: true }).click()
-  await expect(page.getByRole('switch')).toBeChecked()
-  await page.getByRole('button', { name: 'Close', exact: true }).click()
-  await page.getByRole('button', { name: 'Remove favorite', exact: true }).click()
-  await page.goto('/labels/Quartet%20rehearsal')
-  await expect(page.locator('.tag-row')).toContainText('Smile')
-  await page.goto('/favorites')
-  await expect(page.getByText('no faves yet')).toBeVisible()
-  await page.goto('/data')
-  await page.getByLabel('Restore backup file').setInputFiles({
-    name: 'native-backup.json',
-    mimeType: 'application/json',
-    buffer: Buffer.from(
-      JSON.stringify({
-        favorites: [{ id: 2, title: 'Native favorite' }],
-        labels: [{ label: 'Imported', tags: [{ id: 3 }] }],
-        date: '2026-01-01',
-      }),
-    ),
-  })
-  await expect(page.getByText('Restored 1 favorites and 2 labels')).toBeVisible()
-  const downloadPromise = page.waitForEvent('download')
-  await page.getByRole('button', { name: 'backup', exact: true }).click()
-  const download = await downloadPromise
-  expect(download.suggestedFilename()).toMatch(/^faves-labels-.*\.json$/)
-  const stream = await download.createReadStream()
-  const chunks: Buffer[] = []
-  for await (const chunk of stream!) chunks.push(chunk)
-  const backup = JSON.parse(Buffer.concat(chunks).toString())
-  expect(backup.favorites.map((f: { id: number }) => f.id)).toEqual([2])
-  expect(backup.labels.map((l: { label: string }) => l.label)).toEqual([
-    'Quartet rehearsal',
-    'Imported',
-  ])
-  await page.goto('/favorites')
+test('controls dim after four seconds and wake on a tap of the sheet', async ({ page }) => {
+  await enter(page, '/popular')
+  await rows(page).first().click()
+  const play = button(page, /^(play|pause)$/)
+  await expect(play).toHaveAttribute('data-dim', 'false')
+  await expect(play).toHaveAttribute('data-dim', 'true', { timeout: 6000 })
+  await page.getByTestId('sheet-music').click({ position: { x: 40, y: 200 } })
+  await expect(play).toHaveAttribute('data-dim', 'false')
+})
+
+test('tag menu, info and tracks sheets, labels and videos', async ({ page }) => {
+  await enter(page, '/popular')
+  await rows(page).first().click()
+  await button(page, 'menu').click()
+  const menu = page.getByRole('dialog', { name: 'tag menu' })
+  await expect(menu.getByRole('button')).toHaveText([/tag info/, /labels/, /tracks/, /videos/])
+
+  await menu.getByRole('button', { name: 'tag info' }).click()
+  const info = page.getByRole('dialog', { name: 'tag info' })
+  await expect(info.getByText('arranger:')).toBeVisible()
+  await page.keyboard.press('Escape')
+  await expect(info).toBeHidden()
+
+  await button(page, 'menu').click()
+  await menu.getByRole('button', { name: 'tracks' }).click()
+  const tracks = page.getByRole('dialog', { name: 'tracks' })
+  await expect(tracks.getByRole('radio', { name: /All Parts/ })).toBeChecked()
+  await page.keyboard.press('Escape')
+
+  await button(page, 'menu').click()
+  await menu.getByRole('button', { name: 'labels' }).click()
+  await expect(page).toHaveURL(/\/tag\/\d+\/labels$/)
+  await button(page, 'new label').click()
+  await page.getByRole('textbox', { name: 'label' }).fill('contest')
+  await page.keyboard.press('Enter')
+  await expect(page.getByRole('checkbox').and(live(page))).toBeChecked()
+  await button(page, 'back').click()
+  await expect(button(page, 'menu')).toBeVisible()
+})
+
+test('search dialog, filters, sorting, and tabs that keep their state', async ({ page }) => {
+  await enter(page)
+  await tab(page, 'search').click()
+  const dialog = page.getByRole('dialog', { name: 'search for tags' })
+  await expect(dialog.getByRole('searchbox')).toBeFocused()
+  await dialog.getByRole('searchbox').fill('moonlight')
+  await dialog.getByRole('radio', { name: 'classic' }).click()
+  await dialog.getByRole('button', { name: 'search' }).click()
+  await expect(dialog).toBeHidden()
+  await expect(rows(page).first()).toBeVisible()
+  await expect(page.locator('main, div').getByText('classic', { exact: true }).and(live(page)).last()).toBeVisible()
+  const byDownloads = await rows(page).first().getAttribute('data-tag-id')
+
+  await button(page, 'menu').click()
+  await page.getByRole('button', { name: 'sort alphabetically' }).click()
+  await expect(rows(page).first()).not.toHaveAttribute('data-tag-id', byDownloads!)
+
+  await tab(page, 'history').click()
+  await expect(page.getByText('tags you have viewed will show up here')).toBeVisible()
+  await tab(page, 'search').click()
+  await expect(button(page, /moonlight/)).toBeVisible()
+  await expect(rows(page).first()).toBeVisible()
+
+  await button(page, 'new search').click()
+  await expect(dialog.getByRole('searchbox')).toHaveValue('')
+})
+
+test('favorites, labels, backup and restore persist', async ({ page }) => {
+  await enter(page, '/popular')
+  await rows(page).first().click()
+  await button(page, 'add favorite').click()
+  await expect(button(page, 'remove favorite')).toBeVisible()
+  await button(page, 'back').click()
+  await tab(page, 'faves').click()
+  await expect(rows(page)).toHaveCount(1)
+
+  await tab(page, 'home').click()
+  if (await button(page, 'back').isVisible()) await button(page, 'back').click()
+  await homeRow(page, 'data').click()
+  const download = page.waitForEvent('download')
+  await homeRow(page, 'backup').click()
+  const file = await (await download).path()
+  await expect(page.getByRole('status')).toContainText('exported 1 favorite and 0 labels')
+  const backup = JSON.parse(await readFile(file, 'utf8'))
+  expect(backup.favorites).toHaveLength(1)
+
+  await page.evaluate(() => localStorage.clear())
+  await enter(page, '/data')
+  await page.getByLabel('restore backup file').setInputFiles(file)
+  await expect(page.getByRole('status')).toContainText('imported 1 favorite and 0 labels')
   await page.reload()
-  await expect(page.locator('.tag-row')).toHaveCount(1)
-  await page.goto('/history')
-  await expect(page.locator('.tag-row')).toContainText('Smile')
+  await tab(page, 'faves').click()
+  await expect(rows(page)).toHaveCount(1)
+
+  await button(page, 'menu').click()
+  await page.getByRole('button', { name: 'remove all favorites' }).click()
+  await page.getByRole('dialog', { name: 'remove all favorites' }).getByRole('button', { name: 'remove all favorites' }).click()
+  await expect(page.getByText('to add favorites,')).toBeVisible()
 })
 
-test('PWA manifest, offline catalog and direct-route reload', async ({
-  page,
-  context,
-  browserName,
-}) => {
+test('labels: create, rename, reorder, delete', async ({ page }) => {
+  await enter(page, '/labels')
+  await expect(page.getByText('no labels yet')).toBeVisible()
+  for (const name of ['first', 'second']) {
+    await button(page, 'new').click()
+    await page.getByRole('textbox', { name: 'label' }).fill(name)
+    await page.keyboard.press('Enter')
+    await expect(homeRow(page, name)).toBeVisible()
+  }
+  await button(page, 'new').click()
+  await page.getByRole('textbox', { name: 'label' }).fill('first')
+  await expect(page.getByRole('alert')).toHaveText('label already exists')
+  await button(page, 'cancel').click()
+
+  await button(page, 'edit').click()
+  await button(page, 'rename first').click()
+  await page.getByRole('textbox', { name: 'label' }).fill('warmups')
+  await page.keyboard.press('Enter')
+  await expect(button(page, 'rename warmups')).toBeVisible()
+
+  const handle = button(page, 'reorder warmups')
+  await handle.focus()
+  // dnd-kit measures between key presses, so give each step a frame to land.
+  for (const key of ['Space', 'ArrowUp', 'Space']) {
+    await page.keyboard.press(key)
+    await page.waitForTimeout(150)
+  }
+    const order = () =>
+    page.evaluate(() => JSON.parse(localStorage.getItem('goodtags.library.v1')!).labels.map((l: { name: string }) => l.name))
+  expect(await order()).toEqual(['warmups', 'second'])
+
+  await button(page, 'rename second').click()
+  await button(page, 'delete second').click()
+  await page.getByRole('dialog', { name: 'delete label' }).getByRole('button', { name: 'delete label' }).click()
+  expect(await order()).toEqual(['warmups'])
+})
+
+test('options persist and switch the whole app font', async ({ page }) => {
+  await enter(page, '/options')
+  const serif = page.getByRole('checkbox').first()
+  await expect(serif).toBeChecked()
+  await page.getByText('use serif fonts').click()
+  await expect(page.locator('html')).toHaveAttribute('data-font', 'sans')
+  await page.reload()
+  await expect(page.getByRole('checkbox').first()).not.toBeChecked()
+})
+
+test('a deep link rebuilds the stack beneath it', async ({ page }) => {
+  await enter(page, '/popular/tag/1809')
+  await expect(button(page, 'menu')).toBeVisible()
+  await button(page, 'back').click()
+  await expect(page).toHaveURL(/\/popular$/)
+  await expect(rows(page)).toHaveCount(50)
+  await button(page, 'back').click()
+  await expect(homeRow(page, 'popular')).toBeVisible()
+})
+
+test('nothing scrolls the page sideways at any supported width', async ({ page }) => {
+  await enter(page, '/popular')
+  await expect(rows(page).first()).toBeVisible()
+  expect(await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true)
+})
+
+test('PWA manifest, offline catalog and direct-route reload', async ({ page, context, browserName }) => {
   // WebKit's setOffline emulation blocks SW responses too. Stop an isolated origin
   // instead, proving real offline navigation without changing app behavior.
   const isolated =
@@ -105,8 +226,8 @@ test('PWA manifest, offline catalog and direct-route reload', async ({
     origin = `http://localhost:${ready.port}`
   }
   try {
-    await page.goto(`${origin}/search?q=love`)
-    await expect(page.locator('.tag-row').first()).toBeVisible()
+    await enter(page, `${origin}/classic`)
+    await expect(rows(page).first()).toBeVisible()
     await page.evaluate(async () => {
       await navigator.serviceWorker.ready
     })
@@ -123,34 +244,8 @@ test('PWA manifest, offline catalog and direct-route reload', async ({
       await once(isolated, 'exit')
     } else await context.setOffline(true)
     await page.reload()
-    await expect(page.locator('.tag-row').first()).toBeVisible()
-    await page.getByRole('textbox', { name: 'Search tags' }).fill('1')
-    await page.locator('form').getByRole('button', { name: 'Search', exact: true }).click()
-    await expect(page.locator('.tag-row').filter({ hasText: '#1' }).first()).toBeVisible()
-    await page.goto(`${origin}/options`)
-    await page.getByRole('switch').first().uncheck()
-    await page.reload()
-    await expect(page.getByRole('switch').first()).not.toBeChecked()
-    await expect(page.locator('html')).toHaveAttribute('data-font', 'sans')
+    await expect(rows(page)).toHaveCount(125)
   } finally {
     isolated?.kill()
   }
-})
-
-test('label rename, reorder and deletion preserve favorites', async ({ page }) => {
-  await page.goto('/labels')
-  for (const name of ['First', 'Second']) {
-    await page.getByRole('button', { name: 'create label', exact: true }).click()
-    await page.getByRole('textbox', { name: 'Label name' }).fill(name)
-    await page.getByRole('button', { name: 'Save', exact: true }).click()
-  }
-  await page.getByRole('button', { name: 'Move First up', exact: true }).click()
-  await expect(page.locator('.label-row').first()).toContainText('First')
-  await page.getByRole('button', { name: 'Rename First', exact: true }).click()
-  await page.getByRole('textbox', { name: 'Label name' }).fill('Renamed')
-  await page.getByRole('button', { name: 'Save', exact: true }).click()
-  await expect(page.locator('.label-row').first()).toContainText('Renamed')
-  await page.getByRole('button', { name: 'Delete Renamed', exact: true }).click()
-  await page.getByRole('button', { name: 'Remove', exact: true }).click()
-  await expect(page.locator('.label-row')).toHaveCount(1)
 })

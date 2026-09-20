@@ -104,7 +104,13 @@ export function NavigationProvider({ children }: { children: ReactNode }) {
 }
 
 /** react-native-screens `animation: 'fade'`: 0.5s ease-in-out on the screen above. */
-const fade = { duration: 0.5, ease: 'easeInOut' } as const
+const FADE_MS = 500
+const fade = { duration: FADE_MS / 1000, ease: 'easeInOut' } as const
+const variants = {
+  hidden: { opacity: 0 },
+  shown: (skip: boolean) => ({ opacity: 1, transition: skip ? { duration: 0 } : fade }),
+  gone: (skip: boolean) => ({ opacity: 0, transition: skip ? { duration: 0 } : fade }),
+}
 
 /**
  * A native stack. Every route stays mounted (state and scroll survive, as with
@@ -123,13 +129,19 @@ export function StackView({
   const { instant } = useNavigation()
   const topKey = routes.at(-1)?.key
   // The screen beneath stays visible until the pushed screen above has finished fading in.
-  // Derived during render so there is never a frame with neither screen showing.
+  // `settled` trails `topKey` by exactly the fade, and is compared during render so there is
+  // never a frame with neither screen showing.
   const [settled, setSettled] = useState(topKey)
   const known = useRef(new Set(routes.map(r => r.key)))
+  const pushed = useRef<string>(undefined)
+  if (topKey && !known.current.has(topKey)) pushed.current = topKey
   useEffect(() => {
-    if (topKey && known.current.has(topKey)) setSettled(topKey)
     known.current = new Set(routes.map(r => r.key))
-  }, [topKey, routes])
+    if (pushed.current !== topKey || instant) return setSettled(topKey)
+    const timer = setTimeout(() => setSettled(topKey), FADE_MS)
+    return () => clearTimeout(timer)
+    // keyed on the focused screen only; `routes` changes identity every render
+  }, [topKey, instant])
   return (
     <AnimatePresence initial={false} custom={instant}>
       {routes.map((route, index) => {
@@ -139,15 +151,10 @@ export function StackView({
           <motion.div
             key={route.key}
             custom={instant}
-            variants={{
-              hidden: { opacity: 0 },
-              shown: (skip: boolean) => ({ opacity: 1, transition: skip ? { duration: 0 } : fade }),
-              gone: (skip: boolean) => ({ opacity: 0, transition: skip ? { duration: 0 } : fade }),
-            }}
+            variants={variants}
             initial="hidden"
             animate="shown"
             exit="gone"
-            onAnimationComplete={() => isTop && setSettled(route.key)}
             inert={!isTop || !focused}
             className={cn(
               'absolute inset-0 flex flex-col overflow-hidden bg-surface',
