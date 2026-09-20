@@ -37,7 +37,7 @@ yarn test:e2e  # production-browser checks (build first)
 
 ## Deploy
 
-The app deploys to Cloudflare as a single Worker: `dist/` as static assets, plus the media bridge with an edge cache. It fits the Workers Free plan; only media requests count against it. Follow [docs/cloudflare-deployment.md](docs/cloudflare-deployment.md): `tofu -chdir=infra apply` creates the Worker and attaches your hostname, `yarn deploy` uploads the app, and CI can deploy on every push to `main`.
+The app deploys to Cloudflare as a single Worker: `dist/` as static assets, plus the media bridge with an edge cache. It fits the Workers Free plan; only media requests count against it. Follow [docs/cloudflare-deployment.md](docs/cloudflare-deployment.md): `yarn deploy` creates and uploads the Worker, `tofu -chdir=infra apply` attaches your hostname, and CI can deploy on every push to `main`.
 
 The app currently expects the **root of an origin**, not a subdirectory. There are no API keys or external databases to configure. User libraries remain in the browser; the Worker is stateless.
 
@@ -60,7 +60,7 @@ See [the migration notes](docs/web-migration.md) for architecture, parity detail
 
 - `web/`: active React DOM application and tests.
 - `worker/`, `wrangler.jsonc`: the Cloudflare Worker (static assets + restricted media bridge with edge caching).
-- `infra/`: OpenTofu/Terraform for the Worker and its custom domain. Deployer-agnostic; see [docs/cloudflare-deployment.md](docs/cloudflare-deployment.md).
+- `infra/`: OpenTofu/Terraform for the Worker's custom domain. Deployer-agnostic; see [docs/cloudflare-deployment.md](docs/cloudflare-deployment.md).
 - `vite.config.ts`: Tailwind, worker bundling, PWA manifest, and caching.
 - `components.json`, `web/components/ui/`: shadcn/ui configuration and source components.
 - `src/assets/`: original fonts, audio, artwork, and SQLite seed. `scripts/prepare-web-assets.mjs` copies these into ignored public directories during development/build.

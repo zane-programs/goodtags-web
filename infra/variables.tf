@@ -19,7 +19,7 @@ variable "hostname" {
 }
 
 variable "worker_name" {
-  description = "Worker name. Must match `name` in wrangler.jsonc (or `wrangler deploy --name`)."
+  description = "The Worker to serve, already deployed by `yarn deploy`. Matches `name` in wrangler.jsonc."
   type        = string
   default     = "goodtags-web"
 }

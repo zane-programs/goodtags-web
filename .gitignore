@@ -117,3 +117,5 @@ __pycache__/
 *.tfstate.*
 *.tfvars
 !*.tfvars.example
+
+.env

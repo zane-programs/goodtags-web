@@ -8,8 +8,8 @@ supplied by whoever deploys.
 
 | Piece | Owned by | Where |
 | --- | --- | --- |
-| Worker code, static assets, bindings, rate limit | Wrangler | `wrangler.jsonc`, `worker/`, `public/_headers` |
-| The Worker entity and its custom domain (DNS record + certificate) | OpenTofu/Terraform | `infra/` |
+| The Worker: code, static assets, bindings, rate limit | Wrangler | `wrangler.jsonc`, `worker/`, `public/_headers` |
+| The custom domain (DNS record + certificate) | OpenTofu/Terraform | `infra/` |
 | The zone itself, its other records, zone-wide rules | Not this repository | — |
 
 `wrangler deploy` only touches custom domains listed in its own config, and none are,
@@ -80,7 +80,18 @@ You need a Cloudflare account, a zone already active in it (for example
    export CLOUDFLARE_ACCOUNT_ID=…
    ```
 
-2. **Create the Worker and attach the hostname.**
+2. **Upload the app.** The first deploy creates the Worker.
+
+   ```sh
+   yarn install --immutable
+   yarn deploy            # yarn build && wrangler deploy
+   ```
+
+   It is now live at `goodtags-web.<your-subdomain>.workers.dev`, without an edge
+   cache.
+
+3. **Attach the hostname.** This has to come second: Cloudflare refuses to attach a
+   custom domain to a Worker that has no deployment (error 100124).
 
    ```sh
    cp infra/terraform.tfvars.example infra/terraform.tfvars   # gitignored; fill it in
@@ -88,16 +99,8 @@ You need a Cloudflare account, a zone already active in it (for example
    tofu -chdir=infra apply
    ```
 
-   This creates an empty Worker named `goodtags-web`, a proxied DNS record for the
-   hostname, and its certificate. The hostname must not already have a DNS record.
-   Until step 3 the hostname answers with an error: there is no code yet.
-
-3. **Upload the app.**
-
-   ```sh
-   yarn install --immutable
-   yarn deploy            # yarn build && wrangler deploy
-   ```
+   This creates a proxied DNS record for the hostname and its certificate. The
+   hostname must not already have a DNS record.
 
 4. **Check it.** A score or track requested twice should go `MISS` then `HIT`:
 
@@ -112,16 +115,15 @@ Once the custom domain works you can set `"workers_dev": false` in `wrangler.jso
 so the app has a single origin. That matters for a PWA: storage, installation and
 the service worker are per origin, so people should only ever meet one.
 
-To try it without a domain, skip step 2: with the token exported, `yarn deploy` alone
-publishes to `goodtags-web.<your-subdomain>.workers.dev` (without an edge cache).
+To try it without a domain, stop after step 2.
 
 ### State
 
 `infra/` uses local state (`infra/terraform.tfstate`, gitignored). It holds no secrets
 but is the record of what the stack owns, so keep it, or configure a
 [remote backend](https://opentofu.org/docs/language/settings/backends/configuration/)
-in a `backend.tf` of your own. If it is lost, `tofu import` the two resources rather
-than re-applying.
+in a `backend.tf` of your own. If it is lost, `tofu import` the custom domain rather than
+re-applying.
 
 ## Continuous deployment
 
@@ -144,8 +146,8 @@ rare and are applied by hand from a machine that has the state.
 - **Roll back:** `yarn wrangler rollback`, or Deployments in the dashboard.
 - **Purge a bad cached file:** Caching → Configuration → Custom Purge by URL with the
   exact `/media?url=…` URL the app requested, or wait out the TTL.
-- **Tear down:** `tofu -chdir=infra destroy`, then delete the leftover certificate if
-  the dashboard still lists one.
+- **Tear down:** `tofu -chdir=infra destroy`, then `yarn wrangler delete`, then delete
+  the leftover certificate if the dashboard still lists one.
 
 ## Local equivalents
 
