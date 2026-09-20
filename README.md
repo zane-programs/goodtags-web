@@ -16,14 +16,14 @@ If Corepack is unavailable, use `node .yarn/releases/yarn-4.12.0.cjs` in place o
 
 ```sh
 yarn build     # typecheck + production build + offline service worker
-yarn start     # production server at http://localhost:4173
+yarn start     # production build on the Workers runtime at http://localhost:4173
 yarn test      # unit tests against the real bundled catalog
 yarn lint
 yarn playwright install chromium webkit
 yarn test:e2e  # production-browser checks (build first)
 ```
 
-`PORT` configures the production server. `yarn preview` also supports the media bridge. Development mode deliberately does not register a service worker: use the production build to test installation and offline behavior.
+`PORT` configures `yarn start`, which runs the same Worker that is deployed (through `wrangler dev`). `yarn dev` and `yarn preview` also support the media bridge. Development mode deliberately does not register a service worker: use the production build to test installation and offline behavior.
 
 ## What is included
 
@@ -37,16 +37,11 @@ yarn test:e2e  # production-browser checks (build first)
 
 ## Deploy
 
-Deploy the Node application behind HTTPS:
+The app deploys to Cloudflare as a single Worker: `dist/` as static assets, plus the media bridge with an edge cache. It fits the Workers Free plan; only media requests count against it. Follow [docs/cloudflare-deployment.md](docs/cloudflare-deployment.md): `tofu -chdir=infra apply` creates the Worker and attaches your hostname, `yarn deploy` uploads the app, and CI can deploy on every push to `main`.
 
-1. Install with `yarn install --immutable`.
-2. Build with `yarn build`.
-3. Run `yarn start`, setting `PORT` as needed.
-4. Route the HTTPS origin to this process, including `/media` and all application routes.
+The app currently expects the **root of an origin**, not a subdirectory. There are no API keys or external databases to configure. User libraries remain in the browser; the Worker is stateless.
 
-The app currently expects the **root of an origin**, not a subdirectory. There are no API keys, accounts, or external databases to configure. User libraries remain in the browser; the server is stateless.
-
-**Do not deploy only `dist/` to a static host without the media bridge.** The source content host does not send CORS headers for scores and tracks. `server/media.mjs` is a restricted same-origin streaming bridge with HTTPS host validation, redirect checks, and byte-range support. Vite mounts the same handler in development/preview. The canonical tag database is downloaded directly from its CORS-enabled GitHub Pages origin.
+**Do not deploy only `dist/` to a static host without the media bridge.** The source content host does not send CORS headers for scores and tracks. `worker/media.ts` is a restricted same-origin bridge with HTTPS host validation, redirect checks, byte-range support and edge caching. Vite mounts the same handler in development/preview. The canonical tag database is downloaded directly from its CORS-enabled GitHub Pages origin.
 
 Install from the browser’s install menu on supported Android/desktop browsers. On iPhone/iPad, use Safari → Share → Add to Home Screen. The app includes instructions when a browser does not expose an installation prompt. HTTPS is required in production for service workers, installation, and other secure-context APIs.
 
@@ -64,7 +59,8 @@ See [the migration notes](docs/web-migration.md) for architecture, parity detail
 ## Repository layout
 
 - `web/`: active React DOM application and tests.
-- `server/`: production HTTP server and restricted media bridge.
+- `worker/`, `wrangler.jsonc`: the Cloudflare Worker (static assets + restricted media bridge with edge caching).
+- `infra/`: OpenTofu/Terraform for the Worker and its custom domain. Deployer-agnostic; see [docs/cloudflare-deployment.md](docs/cloudflare-deployment.md).
 - `vite.config.ts`: Tailwind, worker bundling, PWA manifest, and caching.
 - `components.json`, `web/components/ui/`: shadcn/ui configuration and source components.
 - `src/assets/`: original fonts, audio, artwork, and SQLite seed. `scripts/prepare-web-assets.mjs` copies these into ignored public directories during development/build.

@@ -15,6 +15,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - uses: opentofu/setup-opentofu@v1
+        with:
+          tofu_wrapper: false
       - name: enable repository package manager
         run: corepack enable
       - name: install dependencies
@@ -23,6 +26,11 @@ jobs:
         run: |
           yarn lint
           yarn test
+      - name: validate infrastructure
+        run: |
+          tofu -chdir=infra fmt -check
+          tofu -chdir=infra init -backend=false -input=false
+          tofu -chdir=infra validate
       - name: production build
         run: yarn build
       - name: install browsers
@@ -36,6 +44,31 @@ jobs:
           path: |
             playwright-report/
             test-results/
+
+  # Opt-in: forks and fresh clones stay green without Cloudflare credentials. Set the
+  # repository variable CLOUDFLARE_DEPLOY=true and the two secrets to turn it on
+  # (see docs/cloudflare-deployment.md).
+  deploy-web:
+    needs: test-web
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && vars.CLOUDFLARE_DEPLOY == 'true'
+    runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-web
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: enable repository package manager
+        run: corepack enable
+      - name: install dependencies
+        run: yarn install --immutable
+      - name: build and deploy the Worker and its static assets
+        run: yarn deploy
+        env:
+          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
 
   test-py:
     runs-on: 'ubuntu-latest'
